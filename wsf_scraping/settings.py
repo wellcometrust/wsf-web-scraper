@@ -18,6 +18,9 @@ SPIDER_MODULES = ['wsf_scraping.spiders']
 NEWSPIDER_MODULE = 'wsf_scraping.spiders'
 
 # Custom contrats for spider testing
+SPIDER_CONTRACTS = {
+    'wsf_scraping.contracts.AjaxContract': 10,
+}
 ITEM_PIPELINES = {
     'wsf_scraping.pipelines.WsfScrapingPipeline': 10,
 }
