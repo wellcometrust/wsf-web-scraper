@@ -8,6 +8,16 @@ from pdf_parser.pdf_parse import (get_pdf_document, parse_pdf_document,
 
 
 class WsfScrapingPipeline(object):
+    def open_spider(self, spider):
+        with open(settings['KEYWORDS_FILE'], 'r') as k_file:
+            self.keywords = k_file.read().split('\n')
+
+        with open(settings['SECTIONS_KEYWORDS_FILE'], 'r') as s_k_file:
+            self.section_keywords = s_k_file.read().split('\n')
+
+    def close_spider(self, spider):
+        pass
+
     def process_item(self, item, spider):
         settings = get_project_settings()
         keep_pdf = settings['KEEP_PDF']
