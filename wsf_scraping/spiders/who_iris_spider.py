@@ -72,15 +72,16 @@ class WhoIrisSpider(scrapy.Spider):
                 meta={'year': year}
             )
 
-        # Follow next link
-        next_page = response.xpath(
-            './/a[contains(., "next")]/@href'
-        ).extract_first()
-        yield Request(
-            url=response.urljoin(next_page),
-            callback=self.parse,
-            meta={'year': year}
-        )
+        if not self.settings['WHO_IRIS_LIMIT']:
+            # Follow next link
+            next_page = response.xpath(
+                './/a[contains(., "next")]/@href'
+            ).extract_first()
+            yield Request(
+                url=response.urljoin(next_page),
+                callback=self.parse,
+                meta={'year': year}
+            )
 
     def parse_article(self, response):
         """ Scrape the article metadata from the detailed article page. Then,
