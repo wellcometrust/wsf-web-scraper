@@ -1,27 +1,37 @@
-import scrapy
 import os
+import sys
+import scrapy
+import logging
 from scrapy.http import Request
-from tools.extraction import convert, grab_references,\
-                             grab_keyword, cleanhtml
+from tools.cleaners import clean_html
+from tools.dbTools import is_scraped, check_db
+from wsf_scraping.items import WHOArticle
 
 
 class WhoIrisSpider(scrapy.Spider):
     name = 'who_iris'
-
     # All these parameters are optionnal,
     # but it is good to set a result per page ubove 250, to limit query number
     data = {
         'location': '',
         'query': '',
         'sort_by': 'score',
-        'order': 'desc',
         'filter_field_1': 'dateIssued',
         'filter_type_1': 'equals',
         'order': 'desc',
     }
 
+    custom_settings = {
+        'JOBDIR': 'crawls/who_iris'
+    }
+
     def start_requests(self):
-        # Set up per page results
+        """ This sets up the urls to scrape for each years.
+        """
+
+        # Check that the database is set up with the correct columns
+        check_db()
+
         self.data['rpp'] = self.settings['WHO_IRIS_RPP']
         years = self.settings['WHO_IRIS_YEARS']
         urls = []
@@ -36,18 +46,30 @@ class WhoIrisSpider(scrapy.Spider):
         for year in years:
             self.data['filter_value_1'] = year
             # Format it with initial data and launch the process
-            urls.append(url.format(**self.data))
+            urls.append((url.format(**self.data), year))
 
         for url in urls:
-            print(url)
-            yield scrapy.Request(url=url, callback=self.parse)
+            logging.info(url[0])
+            yield scrapy.Request(
+                url=url[0],
+                callback=self.parse,
+                meta={'year': url[1]}
+            )
 
     def parse(self, response):
-        # Grab the link to the detailed article
+        """ Parse the articles listing page and go to the next one.
+
+        @url http://apps.who.int/iris/simple-search?rpp=3
+        @returns items 0 0
+        @returns requests 4 4
+        """
+
+        year = response.meta.get('year', {})
         for href in response.css('.list-group-item::attr(href)').extract():
             yield Request(
                 url=response.urljoin(href),
-                callback=self.parse_article
+                callback=self.parse_article,
+                meta={'year': year}
             )
 
         # Follow next link
@@ -56,66 +78,71 @@ class WhoIrisSpider(scrapy.Spider):
         ).extract_first()
         yield Request(
             url=response.urljoin(next_page),
+            callback=self.parse,
+            meta={'year': year}
         )
 
     def parse_article(self, response):
+        """ Scrape the article metadata from the detailed article page. Then,
+        redirect to the PDF page.
 
-        # Scrap the article metadata
-        data_dict = {}
+        @url http://apps.who.int/iris/handle/10665/123400
+        @returns requests 1 1
+        @returns items 0 0
+        """
+
+        year = response.meta.get('year', {})
+        data_dict = {
+            'Year': year,
+        }
         for tr in response.css('table.itemDisplayTable tr'):
             label = tr.css('td.metadataFieldLabel::text').extract_first()
             label = label[:label.find(':')]
-            value = cleanhtml(tr.css('td.metadataFieldValue').extract_first())
+            # Remove HTML markdown for some metadata are in a <a>
+            value = clean_html(tr.css('td.metadataFieldValue').extract_first())
 
             data_dict[label] = value
 
         # Scrap all the pdf on the page, passing scrapped metadata
-        for href in response.css('a[href$=".pdf"]::attr(href)').extract():
+        href = response.css('a[href$=".pdf"]::attr(href)').extract_first()
+        if href and not is_scraped(href.split('/')[-1]):
             yield Request(
                 url=response.urljoin(href),
                 callback=self.save_pdf,
                 meta={'data_dict': data_dict}
             )
+        else:
+            logging.info(
+                "Item already Dowmloaded or null - Canceling (%s)"
+                % href
+            )
 
     def save_pdf(self, response):
+        """ Retrieve the pdf file and scan it to scrape keywords and sections.
+
+        @url http://apps.who.int/iris/bitstream/10665/123575/1/em_rc8_5_en.pdf
+        @returns items 1 1
+        @returns requests 0 0
+        """
+
         # Retrieve metadata
         data_dict = response.meta.get('data_dict', {})
         section = ''
-
         # Download PDF file to /tmp
         filename = response.url.split('/')[-1]
         with open('/tmp/' + filename, 'wb') as f:
             f.write(response.body)
 
-        try:
-            # Convert PDF content to text format
-            text_file = convert('/tmp/' + filename)
-            data_dict['Pdf'] = filename
-            for keyword in self.settings['SEARCH_FOR_LISTS']:
-                # Fetch references or other keyworded list
-                section = grab_references(text_file, keyword)
+        # Populate a WHOArticle Item
+        who_article = WHOArticle({
+                'title': data_dict.get('Title', ''),
+                'uri': response.request.url,
+                'year': data_dict.get('Year', ''),
+                'authors': data_dict.get('Authors', ''),
+                'pdf': filename,
+                'sections': {},
+                'keywords': {}
+            }
+        )
 
-                # Add references and PDF name to JSON returned file
-                data_dict[keyword.title()] = section if section else None
-
-            for keyword in self.settings['SEARCH_FOR_KEYWORDS']:
-                # Fetch references or other keyworded list
-                section = grab_keyword(text_file, keyword)
-
-                # Add references and PDF name to JSON returned file
-                data_dict[keyword.title()] = section if section else None
-
-            # Remove the PDF file
-            os.remove('/tmp/' + filename)
-        except UnicodeDecodeError:
-            # Some unicode character still can't be decoded properly
-            data_dict['Pdf'] = filename
-            data_dict['References'] = section if section else 'Encoding error'
-
-        except Exception:
-            #  If something goes wrong, write pdf name and error
-            #  Mostly happens on invalid pdfs
-            data_dict['Pdf'] = filename
-            data_dict['References'] = section if section else 'Parsing Error'
-
-        yield data_dict
+        yield who_article

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
+import logging
+
 # Scrapy settings for wsf_scraping project
 #
 # For simplicity, this file contains only settings considered important or
@@ -14,10 +16,27 @@ BOT_NAME = 'wsf_scraper'
 
 SPIDER_MODULES = ['wsf_scraping.spiders']
 NEWSPIDER_MODULE = 'wsf_scraping.spiders'
-LOG_ENABLED = False
 
-# Force UTF-8 encoding
-FEED_EXPORT_ENCODING = 'utf-8'
+# Custom contrats for spider testing
+ITEM_PIPELINES = {
+    'wsf_scraping.pipelines.WsfScrapingPipeline': 10,
+}
+FEED_STORAGES = {
+    'dsx': 'tools.DSXFeedStorage.DSXFeedStorage',
+}
+
+# LOG_ENABLED = False
+LOG_LEVEL = 'INFO'
+LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
+LOG_STDOUT = True
+# Set pdfminer log to WARNING
+logging.getLogger("pdfminer").setLevel(logging.WARNING)
+
+# Use a physical queue, slower but add fiability
+DEPTH_PRIORITY = 1
+SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'
+SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
+DUPEFILTER_CLASS = "wsf_scraping.filter.BLOOMDupeFilter"
 
 # Crawl responsibly by identifying yourself (and your website)
 # USER_AGENT = 'wsf_scraping (+wateystrdjytkfu)'
@@ -26,46 +45,67 @@ FEED_EXPORT_ENCODING = 'utf-8'
 ROBOTSTXT_OBEY = True
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
-CONCURRENT_REQUESTS = 64
-CONCURRENT_REQUESTS_PER_DOMAIN = 64
-RETRY_ENABLED = False
+CONCURRENT_REQUESTS = 8
+CONCURRENT_REQUESTS_PER_DOMAIN = 8
+RETRY_ENABLED = True
+RETRY_TIMES = 3
 DOWNLOAD_WARNSIZE = 0
-DOWNLOAD_TIMEOUT = 360
+DOWNLOAD_MAXSIZE = 0
+DOWNLOAD_TIMEOUT = 20
+DOWNLOAD_FAIL_ON_DATALOSS = True
 
-# Use a physical queue, slower but add fiability
 SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
 
-# Autothrottle for best performances
-AUTOTHROTTLE_ENABLED = True
-AUTOTHROTTLE_START_DELAY = 5.0
-AUTOTHROTTLE_MAX_DELAY = 60.0
-AUTOTHROTTLE_TARGET_CONCURRENCY = 2.0
+HTTPCACHE_ENABLED = False
 
-# Disable cookies (enabled by default)
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 0.1
+AUTOTHROTTLE_MAX_DELAY = 0.5
+AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+
+# Disable cookies
 COOKIES_ENABLED = False
 
-#  who_iris and who_iris_single_page per-page results
+#  who_iris and who_iris_single_page dedicated settings
 WHO_IRIS_RPP = 250
 WHO_IRIS_YEARS = [2012]
+# WHO_IRIS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017]
+
+# Wether or not keep the PDF on a keyword match
+KEEP_PDF = False
+DOWNLOAD_ONLY = False
+KEYWORDS_CONTEXT = 0
 
 # Jsonlines are cleaner for big feeds
 FEED_FORMAT = 'jsonlines'
 FEED_EXPORT_ENCODING = 'utf-8'
+FEED_TEMPDIR = 'var/tmp/'
 
-# Prod feed export to amazon s3
-FEED_CONFIG = 'PROD'
+# Prod feed export to amazon s3 or DSX
+FEED_CONFIG = 'DSX'
 
-if FEED_CONFIG == 'DEBUG':
-    FEED_URI = './results/who_{date}.json'.format(date=datetime.datetime.now())
-else:
+if FEED_CONFIG == 'S3':
     AWS_ACCESS_KEY_ID = "______your_aws_id______"
     AWS_SECRET_ACCESS_KEY = "______your_aws_secret______"
-    FEED_URI = 's3://______your_s3_folder_name______/who_{date}.json'.format(
-        date=datetime.datetime.now()
-    )
+    FEED_URI = 's3://__your_s3_bucket__/scraping/feeds/%(name)s/%(time)s.json'
+
+if FEED_CONFIG == 'DSX':
+    DSX_FEED_CONTAINER = 'OSProject'
+    DSX_AUTH_URL = "https://identity.open.softlayer.com/v3/auth/tokens"
+    DSX_CREDENTIALS = {
+        "region": "",
+        "username": "",
+        "password": "",
+        "domainId": ""
+    }
+    FEED_URI = 'dsx://' + DSX_FEED_CONTAINER + '/%(name)s - %(time)s.json'
+
+else:
+    # By default, log the results in a local folder
+    FEED_URI = './results/%(name)s.json'
 
 # Lists to look for (case insensitive)
-SEARCH_FOR_LISTS = ['references', 'bibliography', 'citations']
+SEARCH_FOR_LISTS = ['reference', 'bibliography', 'citation']
 
 # Keywords to look for (case insensitive)
 SEARCH_FOR_KEYWORDS = ['wellcome']
