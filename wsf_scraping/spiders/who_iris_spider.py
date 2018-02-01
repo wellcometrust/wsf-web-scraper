@@ -85,7 +85,7 @@ class WhoIrisSpider(scrapy.Spider):
 
         @url http://apps.who.int/iris/simple-search?rpp=3
         @returns items 0 0
-        @returns requests 3 4
+        @returns requests 3 3
         """
 
         year = response.meta.get('year', {})
