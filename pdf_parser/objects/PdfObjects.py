@@ -142,14 +142,17 @@ class PdfFile:
 
     def get_lines_by_keyword(self, keyword, context=0):
         """Return a list of lines containing (string)keyword."""
-        low_key = keyword.lower()
         lines_results = []
-
+        pattern = re.compile(''.join([
+            '(^|\W)',
+            keyword,
+            '(\W|$)'
+        ]))
         if context > 0:
             for page in self.pages:
                 lines = []
                 for num, line in enumerate(page.lines):
-                    if self._keyword_is_in_line(low_key, line.text.lower()):
+                    if self._keyword_is_in_line(line.text, pattern):
                         first_line = max(0, num - context)
                         last_line = min(len(page.lines), num + context + 1)
                         lines = page.lines[first_line:last_line]
@@ -158,8 +161,8 @@ class PdfFile:
             for page in self.pages:
                 lines = list(filter(
                     lambda x: self._keyword_is_in_line(
-                        low_key,
-                        x.text.lower()
+                        x.text,
+                        pattern
                     ),
                     page.lines
                 ))
@@ -181,7 +184,7 @@ class PdfFile:
         for page in self.pages:
             lines.extend(page.lines)
         ac_automaton.make_automaton()
-        for line in lines:
+        for num, line in enumerate(lines):
             for index, value in ac_automaton.iter(line.text):
                 pattern = re.compile(''.join([
                     '(^|\W)',
@@ -189,8 +192,15 @@ class PdfFile:
                     '(\W|$)'
                 ]))
                 if self._keyword_is_in_line(line.text, pattern):
+                    first_line = max(0, num - context)
+                    last_line = min(len(page.lines), num + context + 1)
+                    result = page.lines[first_line:last_line]
                     if value[1] in keyword_dict.keys():
-                        keyword_dict[value[1]].append(line.text)
+                        keyword_dict[value[1]].extend(
+                            list(map(lambda x: x.text, result))
+                        )
                     else:
-                        keyword_dict[value[1]] = [line.text]
+                        keyword_dict[value[1]] = list(
+                            map(lambda x: x.text, result)
+                        )
         return keyword_dict
