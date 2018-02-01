@@ -3,7 +3,7 @@ import scrapy
 from lxml import html
 from scrapy.http import Request
 from wsf_scraping.items import NICEArticle
-from tools.dbTools import check_db, is_scraped
+from tools.dbTools import is_scraped
 
 
 class NiceSpider(scrapy.Spider):
