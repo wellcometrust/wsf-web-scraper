@@ -82,6 +82,7 @@ NICE_GET_EVIDENCES = False
 NICE_ARTICLES_COUNT = -1
 
 # Wether or not keep the PDF on a keyword match
+PARSING_METHOD = 'pdftotext'  # pdftotext|pdfminer
 KEEP_PDF = False
 DOWNLOAD_ONLY = False
 KEYWORDS_CONTEXT = 0

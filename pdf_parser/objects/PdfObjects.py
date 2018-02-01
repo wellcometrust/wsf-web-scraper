@@ -1,5 +1,6 @@
 import math
 import re
+import ahocorasick
 
 
 class PdfLine:
@@ -136,9 +137,8 @@ class PdfFile:
 
         return lines_results
 
-    def _keyword_is_in_line(self, keyword, line):
-        search = ''.join(['(^|[\W]+)', keyword, '(?=[\W]+|$)'])
-        return re.search(search, line)
+    def _keyword_is_in_line(self, line, pattern):
+        return pattern.search(line)
 
     def get_lines_by_keyword(self, keyword, context=0):
         """Return a list of lines containing (string)keyword."""
@@ -172,10 +172,25 @@ class PdfFile:
         ordered by keyword.
         """
 
+        ac_automaton = ahocorasick.Automaton()
         keyword_dict = {}
-        for keyword in keywords:
-            lines = self.get_lines_by_keyword(keyword, context)
-            if len(lines) > 0:
-                keyword_dict[keyword] = lines
+        for index, keyword in enumerate(set(keywords)):
+            ac_automaton.add_word(keyword, (index, keyword))
 
+        lines = []
+        for page in self.pages:
+            lines.extend(page.lines)
+        ac_automaton.make_automaton()
+        for line in lines:
+            for index, value in ac_automaton.iter(line.text):
+                pattern = re.compile(''.join([
+                    '(^|\W)',
+                    value[1],
+                    '(\W|$)'
+                ]))
+                if self._keyword_is_in_line(line.text, pattern):
+                    if value[1] in keyword_dict.keys():
+                        keyword_dict[value[1]].append(line.text)
+                    else:
+                        keyword_dict[value[1]] = [line.text]
         return keyword_dict
