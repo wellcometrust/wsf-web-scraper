@@ -1,6 +1,5 @@
 import unittest
-from pdf_parser.pdf_parse import get_pdf_document, parse_pdf_document
-from pdf_parser.objects import PdfObjects
+from pdf_parser.pdf_parse import parse_pdf_document, parse_pdf_document_pdftxt
 
 
 TEST_PDF = 'tests/pdfs/test_pdf.pdf'
@@ -21,11 +20,17 @@ class TestPdfObjects(unittest.TestCase):
 
     def setUp(self):
         self.test_file = open(TEST_PDF, 'rb')
-        document = get_pdf_document(self.test_file)
-        self.pdf_file_object = parse_pdf_document(document)
+        self.pdf_file_object = parse_pdf_document(self.test_file)
+        self.pdf_file_object_2 = parse_pdf_document_pdftxt(self.test_file)
 
     def tearDown(self):
         self.test_file.close()
+
+    def test_pdftotext_equal(self):
+        self.assertEqual(
+            len(self.pdf_file_object.pages),
+            len(self.pdf_file_object_2.pages)
+        )
 
     def test_mean(self):
         font_mean = self.pdf_file_object.get_mean_font_size()
@@ -48,22 +53,23 @@ class TestPdfObjects(unittest.TestCase):
         page_text = self.pdf_file_object.get_page(0).get_page_text(
             ignore_page_numbers=True
         )
+        self.assertTrue(len(page_text) > 0)
 
     def test_lines_by_keyword(self):
-        keyword = 'references'
+        keyword = 'References'
         keyword_lines = self.pdf_file_object.get_lines_by_keyword(keyword)
         self.assertEqual(len(keyword_lines), 1)
         self.assertEqual('References' in keyword_lines[0], True)
 
     def test_lines_by_keywords(self):
-        keywords = ['bold', 'test', 'machine']
+        keywords = ['bold', 'Test', 'machine']
         keyword_lines = self.pdf_file_object.get_lines_by_keywords(keywords)
         self.assertEqual(len(keyword_lines['bold']), 1)
-        self.assertEqual(len(keyword_lines['test']), 6)
+        self.assertEqual(len(keyword_lines['Test']), 6)
         self.assertEqual('bold' in keyword_lines['bold'][0], True)
 
     def test_lines_by_keywords_and_context(self):
-        keywords = ['bold', 'test', 'machine']
+        keywords = ['bold', 'Test', 'machine']
         keyword_lines = self.pdf_file_object.get_lines_by_keywords(keywords, 2)
         self.assertEqual(len(keyword_lines['bold']), 5)
-        self.assertEqual(len(keyword_lines['test']), 3)
+        self.assertEqual(len(keyword_lines['Test']), 24)
