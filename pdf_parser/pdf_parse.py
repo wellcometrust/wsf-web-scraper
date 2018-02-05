@@ -123,6 +123,7 @@ def parse_pdf_document_pdftxt(document):
         words = page.find_all('word')
 
         page_lines = []
+        pdf_line = None
         if words:
             pos_y = words[0].attrs['ymin']
             cur_line = ''
