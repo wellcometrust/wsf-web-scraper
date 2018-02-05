@@ -1,8 +1,10 @@
 asn1crypto==0.23.0
 attrs==17.3.0
 Automat==0.6.0
+beautifulsoup4==4.6.0
 bitarray==0.8.1
 botocore==1.8.11
+bs4==0.0.1
 certifi==2017.11.5
 cffi==1.11.2
 chardet==3.0.4
@@ -17,6 +19,7 @@ jmespath==0.9.3
 lxml==4.1.1
 parsel==1.2.0
 pdfminer.six==20170720
+pyahocorasick==1.1.6
 pyasn1==0.4.2
 pyasn1-modules==0.2.1
 pybloom-live==2.3.1
