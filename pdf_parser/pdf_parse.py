@@ -110,7 +110,7 @@ def parse_pdf_document_pdftxt(document):
     """
 
     parsed_path = document.name.replace('.pdf', '.html')
-    os.system('pdftotext -q -bbox %s %s' % (
+    os.system('pdftotext -q -bbox %s %s 1>/dev/null 2>/dev/null' % (
         document.name,
         parsed_path
     ))
