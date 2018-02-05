@@ -22,13 +22,20 @@ class WsfScrapingPipeline(object):
             self.settings['SECTIONS_KEYWORDS_FILE']
         )
 
-        if not os.path.isdir('./results/pdfs'):
-            os.makedirs('./results/pdfs')
-            os.makedirs('./results/pdfs/nice')
-            os.makedirs('./results/pdfs/who_iris')
-
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        spiders = crawler.spiders.list()
+        if not os.path.isdir('./results/pdfs'):
+            os.makedirs('./results/pdfs')
+
+        for spider_name in spiders:
+            if not os.path.isdir('./results/pdfs/%s' % spider_name):
+                os.makedirs('./results/pdfs/%s' % spider_name)
+
+        return cls()
 
     def process_item(self, item, spider):
         """Process items sent by the spider."""
