@@ -4,8 +4,8 @@ import logging
 from tools.dbTools import insert_article
 from tools.cleaners import parse_keywords_files
 from scrapy.utils.project import get_project_settings
-from pdf_parser.pdf_parse import (get_pdf_document, parse_pdf_document,
-                                  grab_section)
+from pdf_parser.pdf_parse import (parse_pdf_document, grab_section,
+                                  parse_pdf_document_pdftxt)
 
 
 class WsfScrapingPipeline(object):
@@ -48,9 +48,16 @@ class WsfScrapingPipeline(object):
             )
             return item
 
-        self.logger.info('Processing: ' + item['pdf'])
-        document = get_pdf_document(f)
-        pdf_file = parse_pdf_document(document)
+        self.logger.info('Processing: %s (%s)' % (
+            item['pdf'],
+            self.settings['PARSING_METHOD'],
+        ))
+
+        # Parse using pdftotext only if specified. Leads to more false positive
+        if self.settings['PARSING_METHOD'] == 'pdftotext':
+            pdf_file = parse_pdf_document_pdftxt(f)
+        else:
+            pdf_file = parse_pdf_document(f)
 
         for keyword in self.section_keywords:
             # Fetch references or other keyworded list

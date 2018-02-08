@@ -1,17 +1,14 @@
 import math
-from pdfminer.pdfparser import PDFParser
-from pdfminer.pdfdocument import PDFDocument
+import os
+from bs4 import BeautifulSoup as bs
 from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfpage import PDFTextExtractionNotAllowed
 from pdfminer.pdfinterp import PDFResourceManager
 from pdfminer.pdfinterp import PDFPageInterpreter
-from pdfminer.pdfdevice import PDFDevice
-from pdfminer.layout import (LAParams, LTTextBox, LTTextLine, LTChar, LTAnno,
-                             LTTextBoxHorizontal, LTTextLineHorizontal)
 from pdfminer.converter import PDFPageAggregator
 from .objects.PdfObjects import PdfFile, PdfPage, PdfLine
 from .tools.extraction import _find_elements
-
+from pdfminer.layout import (LAParams, LTTextBox, LTTextLine, LTChar, LTAnno,
+                             LTTextBoxHorizontal, LTTextLineHorizontal)
 
 BASE_FONT_SIZE = -10
 
@@ -49,32 +46,24 @@ def get_line_infos(txt_obj):
         return BASE_FONT_SIZE, False, None
 
 
-def get_pdf_document(pdffile):
-    """Create a pdf document for pdfminer lib."""
-    parser = PDFParser(pdffile)
-    # Provide password even if it's empty
-    password = ''
-    document = PDFDocument(parser, password)
-    # Check if the document allows text extraction. If not, abort.
-    if not document.is_extractable:
-        raise PDFTextExtractionNotAllowed
-
-    return document
-
-
-def parse_pdf_document(document):
-    """Given a pdfminer document object, parse the file to return a PdfFile
+def parse_pdf_document(pdffile):
+    """ Given a path to a pdf, parse the file to return a PdfFile
     object, easier to analyse.
     """
     pdf_pages = []
-
     # Create all PDF resources needed by pdfminer.
     rsrcmgr = PDFResourceManager()
     laparams = LAParams(detect_vertical=True)
     device = PDFTextPageAggregator(rsrcmgr, laparams=laparams)
+    # device = PDFTextPageAggregator(rsrcmgr)
     interpreter = PDFPageInterpreter(rsrcmgr, device)
-
-    for page_num, page in enumerate(PDFPage.create_pages(document)):
+    pages = PDFPage.get_pages(
+        pdffile,
+        set(),
+        caching=True,
+        check_extractable=True
+    )
+    for page_num, page in enumerate(pages):
         pdf_lines = []
         has_bold = False
 
@@ -112,6 +101,56 @@ def parse_pdf_document(document):
 
     # Create a new PdfFile with the pages
     pdf_file = PdfFile(pdf_pages, has_bold)
+    return pdf_file
+
+
+def parse_pdf_document_pdftxt(document):
+    """ Given a path to a pdf, parse the file using pdftotext, to return a
+    PdfFile object, easier to analyse.
+    """
+
+    parsed_path = document.name.replace('.pdf', '.html')
+    os.system('pdftotext -q -bbox %s %s 1>/dev/null 2>/dev/null' % (
+        document.name,
+        parsed_path
+    ))
+    html_file = open(parsed_path, 'r')
+    soup = bs(html_file.read(), 'html.parser')
+    file_pages = []
+    pages = soup.find_all('page')
+
+    for num, page in enumerate(pages):
+        words = page.find_all('word')
+
+        page_lines = []
+        pdf_line = None
+        if words:
+            pos_y = words[0].attrs['ymin']
+            cur_line = ''
+            font_size = float(words[0].attrs['ymax'])\
+                - float(words[0].attrs['ymin'])
+            for word in words:
+                cur_font_size = float(word.attrs['ymax'])\
+                    - float(word.attrs['ymin'])
+                if word.attrs['ymin'] == pos_y and font_size == cur_font_size:
+                    cur_line = cur_line + ' ' + word.string
+                else:
+                    pdf_line = PdfLine(
+                        int(math.ceil(font_size)),
+                        False,
+                        cur_line, num,
+                        '',
+                    )
+                    page_lines.append(pdf_line)
+                    cur_line = word.string
+                    pos_y = word.attrs['ymin']
+                    font_size = cur_font_size
+            if pdf_line:
+                page_lines.append(pdf_line)
+        file_pages.append(PdfPage(page_lines, num))
+
+    pdf_file = PdfFile(file_pages)
+    html_file.close()
     return pdf_file
 
 

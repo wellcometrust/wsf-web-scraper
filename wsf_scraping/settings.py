@@ -72,9 +72,8 @@ COOKIES_ENABLED = False
 
 #  who_iris and who_iris_single_page dedicated settings
 WHO_IRIS_RPP = 250
-WHO_IRIS_YEARS = [2012]
 WHO_IRIS_LIMIT = False
-# WHO_IRIS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017]
+WHO_IRIS_YEARS = [2012, 2013, 2014, 2015, 2016, 2017]
 
 # nice dedicated settings
 NICE_GET_HISTORY = False
@@ -82,6 +81,7 @@ NICE_GET_EVIDENCES = False
 NICE_ARTICLES_COUNT = -1
 
 # Wether or not keep the PDF on a keyword match
+PARSING_METHOD = 'pdftotext'  # pdftotext|pdfminer
 KEEP_PDF = False
 DOWNLOAD_ONLY = False
 KEYWORDS_CONTEXT = 0

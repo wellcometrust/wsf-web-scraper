@@ -48,14 +48,3 @@ def insert_article(title, url):
 
     connection.commit()
     connection.close()
-
-
-def reset_scraping_state():
-    connection = sqlite3.connect('db.sqlite3')
-    cursor = connection.cursor()
-    cursor.execute(
-        "DELERE FROM article"
-    )
-
-    connection.commit()
-    connection.close()

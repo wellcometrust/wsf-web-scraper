@@ -15,12 +15,27 @@ RUN apt-get install -qqqy \
     python3 \
     python3-dev \
     gcc \
-    python3-pip
+    python3-pip \
+    libpoppler-cpp-dev \
+    poppler-utils \
+    build-essential \
+    pkg-config
 
 # Update pip
 RUN pip3 install -qqq --upgrade pip
+
 # Install any needed packages specified in requirements.txt
 RUN pip3 install -qqq -r requirements.txt
+RUN pip3 install -qqq scrapyd scrapyd-client
 
-# Run app.py when the container launches
-CMD ["scrapy", "crawl", "who_iris"]
+COPY ./scrapyd.conf /etc/scrapyd/
+VOLUME /etc/scrapyd/ /var/lib/scrapyd/
+EXPOSE 6800
+
+RUN scrapyd & PID=$! && \
+   echo "Waiting for Scrapyd to start" && \
+   sleep 2 && \
+   scrapyd-deploy && \
+   kill $PID
+
+CMD ["scrapyd"]
