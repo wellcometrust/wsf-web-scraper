@@ -1,5 +1,3 @@
-import os
-import sys
 import scrapy
 from scrapy.http import Request
 from tools.cleaners import clean_html
@@ -66,7 +64,7 @@ class WhoIrisSpider(scrapy.Spider):
         url += '&sort_by={sort_by}&order={order}'
         url += '&filter_field_1={filter_field_1}&filter_type_1={filter_type_1}'
         url += '&filter_value_1={filter_value_1}&filter_field_2=language'
-        url += '&filter_type_2=equals&filter_value_2=en'
+        url += '&filter_type_2=equals&filter_value_2=en&filternumbits=apply'
 
         for year in self.years:
             self.data['filter_value_1'] = year
@@ -87,7 +85,7 @@ class WhoIrisSpider(scrapy.Spider):
 
         @url http://apps.who.int/iris/simple-search?rpp=3
         @returns items 0 0
-        @returns requests 4 4
+        @returns requests 3 4
         """
 
         year = response.meta.get('year', {})
@@ -143,7 +141,7 @@ class WhoIrisSpider(scrapy.Spider):
             )
         else:
             err_link = href if href else ''.join([response.url, ' (referer)'])
-            self.logger.debug(
+            self.logger.info(
                 "Item already Downloaded or null - Canceling (%s)"
                 % err_link
             )
@@ -164,7 +162,6 @@ class WhoIrisSpider(scrapy.Spider):
 
         # Retrieve metadata
         data_dict = response.meta.get('data_dict', {})
-        section = ''
         # Download PDF file to /tmp
         filename = response.url.split('/')[-1]
         with open('/tmp/' + filename, 'wb') as f:
