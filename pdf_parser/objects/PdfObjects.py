@@ -185,16 +185,16 @@ class PdfFile:
             lines.extend(page.lines)
         ac_automaton.make_automaton()
         for num, line in enumerate(lines):
-            for index, value in ac_automaton.iter(line.text):
+            for index, value in ac_automaton.iter(line.text.lower()):
                 pattern = re.compile(''.join([
                     '(^|\W)',
                     value[1],
                     '(\W|$)'
-                ]))
+                ]), re.IGNORECASE)
                 if self._keyword_is_in_line(line.text, pattern):
                     first_line = max(0, num - context)
-                    last_line = min(len(page.lines), num + context + 1)
-                    result = page.lines[first_line:last_line]
+                    last_line = min(len(lines), num + context + 1)
+                    result = lines[first_line:last_line]
                     if value[1] in keyword_dict.keys():
                         keyword_dict[value[1]].extend(
                             list(map(lambda x: x.text, result))
