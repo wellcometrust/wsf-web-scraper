@@ -16,7 +16,6 @@ RUN apt-get install -qqqy \
     python3-dev \
     gcc \
     python3-pip \
-    libpoppler-cpp-dev \
     poppler-utils \
     build-essential \
     pkg-config
