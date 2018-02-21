@@ -32,7 +32,6 @@ FEED_STORAGES = {
 # LOG_ENABLED = False
 LOG_LEVEL = 'INFO'
 LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
-LOG_STDOUT = True
 # Set pdfminer log to WARNING
 logging.getLogger("pdfminer").setLevel(logging.WARNING)
 
