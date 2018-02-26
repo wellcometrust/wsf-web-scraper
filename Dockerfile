@@ -19,11 +19,18 @@ RUN apt-get install -qqqy \
     libpoppler-cpp-dev \
     poppler-utils \
     build-essential \
-    pkg-config
+    pkg-config \
+    locales
+
+RUN locale-gen en_GB.UTF-8
+
+ENV LC_ALL=en_GB.UTF-8
+ENV LANG=en_GB.UTF-8
+ENV LANGUAGE=en_GB.UTF-8
 
 # Update pip
 RUN pip3 install -qqq --upgrade pip
-
+RUN rm -f /usr/bin/python && ln /usr/bin/python3 /usr/bin/python
 # Install any needed packages specified in requirements.txt
 RUN pip3 install -qqq -r requirements.txt
 RUN pip3 install -qqq scrapyd scrapyd-client

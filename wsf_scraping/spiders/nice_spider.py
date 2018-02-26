@@ -4,10 +4,32 @@ from lxml import html
 from scrapy.http import Request
 from wsf_scraping.items import NICEArticle
 from tools.dbTools import is_scraped, check_db
+from scrapy.spidermiddlewares.httperror import HttpError
+from twisted.internet.error import DNSLookupError
+from twisted.internet.error import TimeoutError
 
 
 class NiceSpider(scrapy.Spider):
     name = 'nice'
+
+    # custom_settings = {
+    #     'JOBDIR': 'crawls/nice'
+    # }
+
+    def on_error(self, failure):
+        self.logger.error(repr(failure))
+
+        if failure.check(HttpError):
+            response = failure.value.response
+            self.logger.error('HttpError on %s', response.url)
+
+        elif failure.check(DNSLookupError):
+            request = failure.request
+            self.logger.error('DNSLookupError on %s', request.url)
+
+        elif failure.check(TimeoutError):
+            request = failure.request
+            self.logger.error('TimeoutError on %s', request.url)
 
     def start_requests(self):
         """Set up the initial request to the website to scrape."""
@@ -34,6 +56,7 @@ class NiceSpider(scrapy.Spider):
         yield scrapy.Request(
             url=url,
             headers=headers,
+            errback=self.on_error,
             callback=self.parse,
         )
 
@@ -70,18 +93,21 @@ class NiceSpider(scrapy.Spider):
             for url in doc_links:
                 yield scrapy.Request(
                     url=url,
+                    errback=self.on_error,
                     callback=self.parse_article
                 )
 
             for url in evidence_links:
                 yield scrapy.Request(
                     url=url,
+                    errback=self.on_error,
                     callback=self.parse_related_documents
                 )
 
             for url in history_links:
                 yield scrapy.Request(
                     url=url,
+                    errback=self.on_error,
                     callback=self.parse_related_documents
                 )
 
@@ -107,6 +133,7 @@ class NiceSpider(scrapy.Spider):
         for href in response.css('.track-link::attr(href)').extract():
             yield Request(
                 url=response.urljoin(href),
+                errback=self.on_error,
                 callback=self.save_pdf,
                 meta={'data_dict': data_dict}
             )
@@ -143,6 +170,7 @@ class NiceSpider(scrapy.Spider):
         if href:
             return Request(
                 url=response.urljoin(href),
+                errback=self.on_error,
                 callback=self.save_pdf,
                 meta={'data_dict': data_dict}
             )
@@ -167,7 +195,7 @@ class NiceSpider(scrapy.Spider):
         is_pdf = response.headers.get('content-type', '') == b'application/pdf'
 
         if is_scraped(response.request.url):
-            self.logger.info(
+            self.logger.debug(
                 "Item already Dowmloaded or null - Canceling (%s)"
                 % response.request.url
             )

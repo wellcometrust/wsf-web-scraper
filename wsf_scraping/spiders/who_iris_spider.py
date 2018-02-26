@@ -141,7 +141,7 @@ class WhoIrisSpider(scrapy.Spider):
             )
         else:
             err_link = href if href else ''.join([response.url, ' (referer)'])
-            self.logger.info(
+            self.logger.debug(
                 "Item already Downloaded or null - Canceling (%s)"
                 % err_link
             )
