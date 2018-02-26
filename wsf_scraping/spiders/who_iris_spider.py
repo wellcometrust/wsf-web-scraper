@@ -1,7 +1,6 @@
 import scrapy
 from scrapy.http import Request
 from tools.cleaners import clean_html
-from tools.dbTools import is_scraped, check_db
 from wsf_scraping.items import WHOArticle
 from scrapy.utils.project import get_project_settings
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -52,9 +51,6 @@ class WhoIrisSpider(scrapy.Spider):
     def start_requests(self):
         """ This sets up the urls to scrape for each years.
         """
-
-        # Check that the database is set up with the correct columns
-        check_db()
 
         self.data['rpp'] = self.settings['WHO_IRIS_RPP']
         urls = []
@@ -134,7 +130,7 @@ class WhoIrisSpider(scrapy.Spider):
 
         # Scrap all the pdf on the page, passing scrapped metadata
         href = response.css('a[href$=".pdf"]::attr(href)').extract_first()
-        if href and not is_scraped(href.split('/')[-1]):
+        if href:
             yield Request(
                 url=response.urljoin(href),
                 callback=self.save_pdf,
@@ -144,7 +140,7 @@ class WhoIrisSpider(scrapy.Spider):
         else:
             err_link = href if href else ''.join([response.url, ' (referer)'])
             self.logger.debug(
-                "Item already Downloaded or null - Canceling (%s)"
+                "Item is null - Canceling (%s)"
                 % err_link
             )
 

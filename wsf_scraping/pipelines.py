@@ -2,9 +2,10 @@
 import os
 import logging
 from scrapy import spiderloader
+from tools.dbTools import insert_article, check_file, check_db
+from tools.cleaners import parse_keywords_files, get_file_hash
 from scrapy.utils.project import get_project_settings
-from tools.dbTools import insert_article
-from tools.cleaners import parse_keywords_files
+from scrapy.exceptions import DropItem
 from pdf_parser.pdf_parse import (parse_pdf_document, grab_section,
                                   parse_pdf_document_pdftxt)
 
@@ -13,6 +14,7 @@ class WsfScrapingPipeline(object):
     def __init__(self):
         """Initialise the pipeline, giveng it the settings and keywords."""
 
+        check_db()
         self.settings = get_project_settings()
 
         self.keywords = parse_keywords_files(
@@ -42,7 +44,12 @@ class WsfScrapingPipeline(object):
 
         # Convert PDF content to text format
         f = open('/tmp/' + item['pdf'], 'rb')
-
+        file_hash = get_file_hash('/tmp/' + item['pdf'])
+        if check_file(file_hash):
+            # File is already scraped in the database
+            raise DropItem(
+                'Item footprint matches a footprint already in the database'
+            )
         if download_only:
             os.rename(
                 ''.join(['/tmp/', item['pdf']]),
@@ -96,6 +103,6 @@ class WsfScrapingPipeline(object):
                 )
         else:
             os.remove('/tmp/' + item['pdf'])
-        insert_article(item['title'], item['uri'])
+        insert_article(item['title'], file_hash, item['uri'])
 
         return item

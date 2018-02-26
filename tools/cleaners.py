@@ -1,5 +1,6 @@
 # # -*- coding: utf-8 -*-
 import re
+import hashlib
 import logging
 
 
@@ -29,3 +30,15 @@ def parse_keywords_files(file_path):
         keywords_list = []
     finally:
         return keywords_list
+
+
+def get_file_hash(file_path):
+    """Return the md5 hash of a file."""
+    BLOCKSIZE = 65536
+    hasher = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        buf = f.read(BLOCKSIZE)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = f.read(BLOCKSIZE)
+    return hasher.hexdigest()

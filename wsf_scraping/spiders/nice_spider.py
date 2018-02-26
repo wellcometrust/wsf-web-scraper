@@ -3,7 +3,6 @@ import scrapy
 from lxml import html
 from scrapy.http import Request
 from wsf_scraping.items import NICEArticle
-from tools.dbTools import is_scraped, check_db
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError
@@ -12,9 +11,9 @@ from twisted.internet.error import TimeoutError
 class NiceSpider(scrapy.Spider):
     name = 'nice'
 
-    # custom_settings = {
-    #     'JOBDIR': 'crawls/nice'
-    # }
+    custom_settings = {
+        'JOBDIR': 'crawls/nice'
+    }
 
     def on_error(self, failure):
         self.logger.error(repr(failure))
@@ -33,9 +32,6 @@ class NiceSpider(scrapy.Spider):
 
     def start_requests(self):
         """Set up the initial request to the website to scrape."""
-
-        # Check that the database is set up with the correct columns
-        check_db()
 
         articles_count = self.settings['NICE_ARTICLES_COUNT']
 
@@ -59,6 +55,7 @@ class NiceSpider(scrapy.Spider):
             errback=self.on_error,
             dont_filter=True,
             callback=self.parse,
+            dont_filter=True
         )
 
     def parse(self, response):
@@ -194,13 +191,6 @@ class NiceSpider(scrapy.Spider):
 
         # Download PDF file to /tmp
         is_pdf = response.headers.get('content-type', '') == b'application/pdf'
-
-        if is_scraped(response.request.url):
-            self.logger.debug(
-                "Item already Dowmloaded or null - Canceling (%s)"
-                % response.request.url
-            )
-            return
 
         if not is_pdf:
             self.logger.info('Not a PDF, aborting (%s)' % response.url)

@@ -31,10 +31,11 @@ FEED_STORAGES = {
 
 # LOG_ENABLED = False
 LOG_LEVEL = 'INFO'
+LOG_FORMATTER = 'wsf_scraping.middlewares.PoliteLogFormatter'
 LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
 # Set pdfminer log to WARNING
 logging.getLogger("pdfminer").setLevel(logging.WARNING)
-
+DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
 # Use a physicqal queue, slower but add fiability
 DEPTH_PRIORITY = 1
 SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'

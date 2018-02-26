@@ -13,6 +13,7 @@ def check_db():
             id INTEGER PRIMARY KEY,
             title VARCHAR(64),
             url VARCHAR(255),
+            file_hash VARCHAR(255),
             scrap_again INTEGER(1) DEFAULT(0),
             Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -37,13 +38,27 @@ def is_scraped(url):
     return result if result else False
 
 
-def insert_article(title, url):
+def check_file(file_hash):
+        #  Init sqlite db to filter PDFs
+        connection = sqlite3.connect('db.sqlite3')
+        cursor = connection.cursor()
+
+        cursor.execute(
+            "SELECT id FROM article WHERE file_hash = ?",
+            (file_hash,)
+        )
+        result = cursor.fetchone()
+        connection.close()
+        return result if result else False
+
+
+def insert_article(title, file_hash, url):
     #  Init sqlite db to filter PDFs
     connection = sqlite3.connect('db.sqlite3')
     cursor = connection.cursor()
     cursor.execute(
-        "INSERT INTO article (title, url) VALUES (?, ?)",
-        (title, url)
+        "INSERT INTO article (title, file_hash, url) VALUES (?, ?, ?)",
+        (title, file_hash, url)
     )
 
     connection.commit()
