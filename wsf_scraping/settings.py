@@ -35,14 +35,12 @@ LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
 # Set pdfminer log to WARNING
 logging.getLogger("pdfminer").setLevel(logging.WARNING)
 
-# Use a physical queue, slower but add fiability
+# Use a physicqal queue, slower but add fiability
 DEPTH_PRIORITY = 1
 SCHEDULER_DISK_QUEUE = 'scrapy.squeues.PickleFifoDiskQueue'
-SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
-DUPEFILTER_CLASS = "wsf_scraping.filter.BLOOMDupeFilter"
 
 # Crawl responsibly by identifying yourself (and your website)
-# USER_AGENT = 'wsf_scraping (+wateystrdjytkfu)'
+USER_AGENT = 'wsf_scraping'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -56,8 +54,6 @@ DOWNLOAD_WARNSIZE = 0
 DOWNLOAD_MAXSIZE = 0
 DOWNLOAD_TIMEOUT = 20
 DOWNLOAD_FAIL_ON_DATALOSS = True
-
-SCHEDULER_MEMORY_QUEUE = 'scrapy.squeues.FifoMemoryQueue'
 
 HTTPCACHE_ENABLED = False
 

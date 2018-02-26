@@ -2,7 +2,7 @@
 *.pyc
 *.DS_Store
 *env*
-db*
+dbs
 *egg*
 data
 results
