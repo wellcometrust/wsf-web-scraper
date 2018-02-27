@@ -13,9 +13,9 @@ def check_db():
             id INTEGER PRIMARY KEY,
             title VARCHAR(64),
             url VARCHAR(255),
-            file_hash VARCHAR(255),
+            file_hash VARCHAR(32),
             scrap_again INTEGER(1) DEFAULT(0),
-            Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );
         """
     )
