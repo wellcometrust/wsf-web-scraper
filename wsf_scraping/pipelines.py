@@ -28,12 +28,9 @@ class WsfScrapingPipeline(object):
 
         spider_loader = spiderloader.SpiderLoader.from_settings(self.settings)
         spiders = spider_loader.list()
-        if not os.path.isdir('./results/pdfs'):
-            os.makedirs('./results/pdfs')
 
         for spider_name in spiders:
-            if not os.path.isdir('./results/pdfs/%s' % spider_name):
-                os.makedirs('./results/pdfs/%s' % spider_name)
+            os.makedirs('./results/pdfs/%s' % spider_name, exist_ok=True)
 
     def process_item(self, item, spider):
         """Process items sent by the spider."""
