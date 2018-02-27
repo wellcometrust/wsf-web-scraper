@@ -57,6 +57,7 @@ class NiceSpider(scrapy.Spider):
             url=url,
             headers=headers,
             errback=self.on_error,
+            dont_filter=True,
             callback=self.parse,
         )
 
@@ -72,7 +73,7 @@ class NiceSpider(scrapy.Spider):
 
         # Grab the link to the detailed article, its evidences and history
         try:
-            articles = json.loads(response._body)
+            articles = json.loads(response.text)
             doc_links = []
             evidence_links = []
             history_links = []

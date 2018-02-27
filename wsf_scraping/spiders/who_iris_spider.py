@@ -77,6 +77,7 @@ class WhoIrisSpider(scrapy.Spider):
                 url=url[0],
                 callback=self.parse,
                 errback=self.on_error,
+                dont_filter=True,
                 meta={'year': url[1]}
             )
 
@@ -106,6 +107,7 @@ class WhoIrisSpider(scrapy.Spider):
                 url=response.urljoin(next_page),
                 callback=self.parse,
                 errback=self.on_error,
+                dont_filter=True,
                 meta={'year': year}
             )
 
