@@ -1,6 +1,7 @@
 import unittest
+import json
 from pdf_parser.pdf_parse import parse_pdf_document, parse_pdf_document_pdftxt
-
+from pdf_parser.objects.PdfObjects import PdfFile
 
 TEST_PDF = 'tests/pdfs/test_pdf.pdf'
 
@@ -14,6 +15,43 @@ Test
     <li>Test</li>
     <li>Test</li>
 </ol>"""
+
+JSON_PDF = json.dumps({
+    'pages': [
+        {
+            'lines': [
+                {
+                    'size': 17,
+                    'bold': True,
+                    'text': 'Page 1 - Title 1',
+                    'page_number': 1,
+                    'font_face': 'Times',
+                }
+            ],
+            'number': 1
+        },
+        {
+            'lines': [
+                {
+                    'size': 17,
+                    'bold': True,
+                    'text': 'Page 2 - Title 2',
+                    'page_number': 2,
+                    'font_face': 'Times',
+                },
+                {
+                    'size': 12,
+                    'bold': False,
+                    'text': 'Page 2 - Text 1',
+                    'page_number': 2,
+                    'font_face': 'Times',
+                },
+            ],
+            'number': 2
+        },
+    ],
+    'has_bold': True
+})
 
 
 class TestPdfObjects(unittest.TestCase):
@@ -62,14 +100,29 @@ class TestPdfObjects(unittest.TestCase):
         self.assertEqual('References' in keyword_lines[0], True)
 
     def test_lines_by_keywords(self):
-        keywords = ['bold', 'Test', 'machine']
+        keywords = ['bold', 'test', 'machine']
         keyword_lines = self.pdf_file_object.get_lines_by_keywords(keywords)
+        self.assertTrue('bold' in keyword_lines.keys())
         self.assertEqual(len(keyword_lines['bold']), 1)
-        self.assertEqual(len(keyword_lines['Test']), 6)
+        self.assertTrue('test' in keyword_lines.keys())
+        self.assertEqual(len(keyword_lines['test']), 6)
         self.assertEqual('bold' in keyword_lines['bold'][0], True)
 
     def test_lines_by_keywords_and_context(self):
-        keywords = ['bold', 'Test', 'machine']
+        keywords = ['bold', 'test', 'machine']
         keyword_lines = self.pdf_file_object.get_lines_by_keywords(keywords, 2)
+        self.assertTrue('bold' in keyword_lines.keys())
         self.assertEqual(len(keyword_lines['bold']), 5)
-        self.assertEqual(len(keyword_lines['Test']), 24)
+        self.assertTrue('test' in keyword_lines.keys())
+        self.assertEqual(len(keyword_lines['test']), 24)
+
+    def test_from_json(self):
+        pdf_file = PdfFile()
+        pdf_file.from_json(JSON_PDF)
+        self.assertTrue(len(pdf_file.pages) == 2)
+
+    def test_to_json(self):
+        pdf_file = PdfFile()
+        pdf_file.from_json(JSON_PDF)
+        pdf_export = pdf_file.to_dict()
+        self.assertEqual(json.dumps(pdf_export), JSON_PDF)

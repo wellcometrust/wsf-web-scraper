@@ -1,5 +1,7 @@
-import math
 import re
+import json
+import math
+import logging
 import ahocorasick
 
 
@@ -29,6 +31,16 @@ class PdfLine:
         self.page_number = page_number
         self.font_face = font_face
 
+    def to_dict(self):
+        """Return a dictionary representation of the PdfLine."""
+        return {
+            'size': self.size,
+            'bold': self.bold,
+            'text': self.text,
+            'page_number': self.page_number,
+            'font_face': self.font_face,
+        }
+
 
 class PdfPage:
     """Represent a page of text from a pdf file, defined by the following
@@ -44,6 +56,14 @@ class PdfPage:
         """Initialize the object. No default are provided."""
         self.lines = lines
         self.number = number
+
+    def to_dict(self):
+        """Return a dictionary representation of the PdfPage."""
+        lines = [line.to_dict() for line in self.lines]
+        return {
+            'lines': lines,
+            'number': self.number,
+        }
 
     def display_page(self):
         """Print the content of the whole page."""
@@ -77,6 +97,37 @@ class PdfFile:
         """
         self.pages = pages
         self.has_bold = has_bold
+        self.logger = logging.getLogger(__name__)
+
+    def from_json(self, json_pdf):
+        """Initialize a PdfFile object from a json representation."""
+        try:
+            dict_pdf = json.loads(json_pdf)
+            pdf_pages = []
+            for page in dict_pdf.get('pages', []):
+                page_lines = []
+                for line in page.get('lines', []):
+                    pdf_line = PdfLine(**line)
+                    page_lines.append(pdf_line)
+                pdf_page = PdfPage(
+                    page_lines,
+                    page.get('number', 0)
+                )
+                pdf_pages.append(pdf_page)
+            self.pages = pdf_pages
+            self.has_bold = dict_pdf.get('has_bold', False)
+        except json.decoder.JSONDecodeError:
+            self.logger.warning(
+                'Could not create pdf object from JSON: JSON decode error'
+            )
+
+    def to_dict(self):
+        """Return a dictionary representation of the PdfFile."""
+        pages = [page.to_dict() for page in self.pages]
+        return {
+            'pages': pages,
+            'has_bold': self.has_bold
+        }
 
     def add_page(self, pdf_page):
         """Add a PdfPage to the pages list."""
