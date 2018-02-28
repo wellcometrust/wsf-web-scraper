@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
+from scrapy import spiderloader
+from scrapy.utils.project import get_project_settings
 from tools.dbTools import insert_article
 from tools.cleaners import parse_keywords_files
-from scrapy.utils.project import get_project_settings
 from pdf_parser.pdf_parse import (parse_pdf_document, grab_section,
                                   parse_pdf_document_pdftxt)
 
@@ -25,17 +26,11 @@ class WsfScrapingPipeline(object):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
 
-    @classmethod
-    def from_crawler(cls, crawler):
-        spiders = crawler.spiders.list()
-        if not os.path.isdir('./results/pdfs'):
-            os.makedirs('./results/pdfs')
+        spider_loader = spiderloader.SpiderLoader.from_settings(self.settings)
+        spiders = spider_loader.list()
 
         for spider_name in spiders:
-            if not os.path.isdir('./results/pdfs/%s' % spider_name):
-                os.makedirs('./results/pdfs/%s' % spider_name)
-
-        return cls()
+            os.makedirs('./results/pdfs/%s' % spider_name, exist_ok=True)
 
     def process_item(self, item, spider):
         """Process items sent by the spider."""
