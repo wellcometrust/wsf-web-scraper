@@ -26,7 +26,7 @@ ITEM_PIPELINES = {
     'wsf_scraping.pipelines.WsfScrapingPipeline': 10,
 }
 FEED_STORAGES = {
-    'dsx': 'tools.DSXFeedStorage.DSXFeedStorage',
+    'dsx': 'tools.DSXFeedStorage',
 }
 
 # LOG_ENABLED = False
