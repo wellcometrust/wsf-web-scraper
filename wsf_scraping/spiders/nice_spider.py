@@ -48,14 +48,13 @@ class NiceSpider(scrapy.Spider):
             'referer': 'https://www.nice.org.uk/guidance/published'
         }
 
-        self.logger.info('Initial url: %s' % url)
+        self.logger.info('Initial url: %s', url)
         yield scrapy.Request(
             url=url,
             headers=headers,
             errback=self.on_error,
             dont_filter=True,
             callback=self.parse,
-            dont_filter=True
         )
 
     def parse(self, response):
@@ -175,8 +174,8 @@ class NiceSpider(scrapy.Spider):
 
         else:
             self.logger.info(
-                'No link found to download the pdf version (%s)'
-                % response.request.url
+                'No link found to download the pdf version (%s)',
+                response.request.url
             )
 
     def save_pdf(self, response):
@@ -193,7 +192,7 @@ class NiceSpider(scrapy.Spider):
         is_pdf = response.headers.get('content-type', '') == b'application/pdf'
 
         if not is_pdf:
-            self.logger.info('Not a PDF, aborting (%s)' % response.url)
+            self.logger.info('Not a PDF, aborting (%s)', response.url)
             return
 
         filename = ''.join([response.url.split('/')[-1], '.pdf'])

@@ -68,7 +68,7 @@ class WhoIrisSpider(scrapy.Spider):
             urls.append((url.format(**self.data), year))
 
         for url in urls:
-            self.logger.info(url[0])
+            self.logger.info('Initial url: %s', url[0])
             yield scrapy.Request(
                 url=url[0],
                 callback=self.parse,
@@ -140,8 +140,8 @@ class WhoIrisSpider(scrapy.Spider):
         else:
             err_link = href if href else ''.join([response.url, ' (referer)'])
             self.logger.debug(
-                "Item is null - Canceling (%s)"
-                % err_link
+                "Item is null - Canceling (%s)",
+                err_link
             )
 
     def save_pdf(self, response):
@@ -155,7 +155,7 @@ class WhoIrisSpider(scrapy.Spider):
         is_pdf = response.headers.get('content-type', '') == b'application/pdf'
 
         if not is_pdf:
-            self.logger.info('Not a PDF, aborting (%s)' % response.url)
+            self.logger.info('Not a PDF, aborting (%s)', response.url)
             return
 
         # Retrieve metadata

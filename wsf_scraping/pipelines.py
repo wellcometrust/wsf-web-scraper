@@ -49,10 +49,11 @@ class WsfScrapingPipeline(object):
                 )
                 return item
 
-            self.logger.info('Processing: %s (%s)' % (
+            self.logger.info(
+                'Processing: %s (%s)',
                 item['pdf'],
                 self.settings['PARSING_METHOD'],
-            ))
+            )
 
             if self.settings['PARSING_METHOD'] == 'pdftotext':
                 pdf_file = parse_pdf_document_pdftxt(f)
