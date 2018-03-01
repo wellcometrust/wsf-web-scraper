@@ -124,5 +124,5 @@ class TestPdfObjects(unittest.TestCase):
     def test_to_json(self):
         pdf_file = PdfFile()
         pdf_file.from_json(JSON_PDF)
-        pdf_export = pdf_file.to_dict()
-        self.assertEqual(json.dumps(pdf_export), JSON_PDF)
+        pdf_export = pdf_file.to_json()
+        self.assertEqual(pdf_export, JSON_PDF)
