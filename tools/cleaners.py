@@ -37,8 +37,9 @@ def get_file_hash(file_path):
     BLOCKSIZE = 65536
     hasher = hashlib.md5()
     with open(file_path, 'rb') as f:
-        buf = f.read(BLOCKSIZE)
-        while len(buf) > 0:
-            hasher.update(buf)
+        while True:
             buf = f.read(BLOCKSIZE)
+            if not buf:
+                break
+            hasher.update(buf)
     return hasher.hexdigest()
