@@ -32,20 +32,31 @@ class WsfScrapingPipeline(object):
         spiders = spider_loader.list()
 
         for spider_name in spiders:
-            os.makedirs('./results/pdfs/%s' % spider_name, exist_ok=True)
+            folder_path = os.path.join('/', 'results', 'pdfs', spider_name)
+            os.makedirs(folder_path, exist_ok=True)
 
-    def check_keywords(self, item, spider_name):
+    def check_keywords(self, item, spider_name, base_pdf_path):
+        """Convert the pdf file to a python object and analyse it to find
+        keywords and section based on the section/keywords files provided.
+        """
+
         keep_pdf = self.settings['KEEP_PDF']
         download_only = self.settings['DOWNLOAD_ONLY']
         feed = self.settings['FEED_CONFIG']
-        pdf_path = ''.join(['./results/pdfs/', spider_name, '/'])
+        pdf_result_path = os.path.join(
+            os.path.curdir,
+            'results',
+            'pdfs',
+            spider_name,
+            '/'
+        )
 
         # Convert PDF content to text format
-        with open('/tmp/' + item['pdf'], 'rb') as f:
+        with open(base_pdf_path, 'rb') as f:
             if download_only:
                 os.rename(
                     ''.join(['/tmp/', item['pdf']]),
-                    ''.join([pdf_path, item['pdf']])
+                    ''.join([pdf_result_path, item['pdf']])
                 )
                 return item
 
@@ -89,22 +100,22 @@ class WsfScrapingPipeline(object):
             else:
                 os.rename(
                     ''.join(['/tmp/', item['pdf']]),
-                    ''.join([pdf_path, item['pdf']])
+                    ''.join([pdf_result_path, item['pdf']])
                 )
         else:
-            os.remove('/tmp/' + item['pdf'])
+            os.remove(base_pdf_path)
         return item
 
     def process_item(self, item, spider):
         """Process items sent by the spider."""
-
-        file_hash = get_file_hash('/tmp/' + item['pdf'])
+        base_pdf_path = os.path.join('/', 'tmp', item['pdf'])
+        file_hash = get_file_hash(base_pdf_path)
         if self.database.is_scraped(file_hash):
             # File is already scraped in the database
             raise DropItem(
                 'Item footprint is already in the database'
             )
-        full_item = self.check_keywords(item, spider.name)
+        full_item = self.check_keywords(item, spider.name, base_pdf_path)
         self.database.insert_article(item['title'], file_hash, item['uri'])
 
         return full_item
