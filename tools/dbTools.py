@@ -17,12 +17,12 @@ class SQLite3Connector:
     def _execute(self, query, params=()):
         try:
             self.cursor.execute(query, params)
-        except Exception as error:
+        except sqlite3.Error as error:
             self.logger.error(
-                'An exception had been encountered when executing {}'.format(
-                    query,
-                )
+                'An exception had been encountered when executing %s',
+                query,
             )
+            raise
 
     def _check_db(self):
         self._execute(
