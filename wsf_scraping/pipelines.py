@@ -26,13 +26,12 @@ class WsfScrapingPipeline(object):
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
-        self.database = SQLite3Connector()
 
         spider_loader = spiderloader.SpiderLoader.from_settings(self.settings)
         spiders = spider_loader.list()
 
         for spider_name in spiders:
-            folder_path = os.path.join('/', 'results', 'pdfs', spider_name)
+            folder_path = os.path.join('./', 'results', 'pdfs', spider_name)
             os.makedirs(folder_path, exist_ok=True)
 
     def check_keywords(self, item, spider_name, base_pdf_path):
@@ -107,14 +106,17 @@ class WsfScrapingPipeline(object):
 
     def process_item(self, item, spider):
         """Process items sent by the spider."""
+
+        database = SQLite3Connector()
+
         base_pdf_path = os.path.join('/', 'tmp', item['pdf'])
         file_hash = get_file_hash(base_pdf_path)
-        if self.database.is_scraped(file_hash):
+        if database.is_scraped(file_hash):
             # File is already scraped in the database
             raise DropItem(
                 'Item footprint is already in the database'
             )
         full_item = self.check_keywords(item, spider.name, base_pdf_path)
-        self.database.insert_article(item['title'], file_hash, item['uri'])
+        database.insert_article(item['title'], file_hash, item['uri'])
 
         return full_item

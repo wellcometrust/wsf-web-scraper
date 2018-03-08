@@ -121,7 +121,7 @@ def parse_pdf_document_pdftxt(document):
             ]
     subprocess.call(cmd)
     # stdout, stderr = p.communicate()
-    html_file = open(parsed_path, 'r')
+    html_file = open(parsed_path, 'r', encoding='utf-8')
     soup = bs(html_file.read(), 'html.parser')
     file_pages = []
     pages = soup.find_all('page')

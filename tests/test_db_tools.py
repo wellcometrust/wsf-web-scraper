@@ -16,6 +16,11 @@ class TestDBTools(unittest.TestCase):
         )
         self.assertTrue(self.database.is_scraped('0' * 32))
         self.database._execute(
+            'UPDATE article SET scrap_again = 1 WHERE file_hash = ?',
+            ('0' * 32,)
+        )
+        self.assertFalse(self.database.is_scraped('0' * 32))
+        self.database._execute(
             'DELETE FROM article WHERE file_hash = ?',
             ('0' * 32,)
         )
