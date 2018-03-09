@@ -3,7 +3,6 @@ import scrapy
 from lxml import html
 from scrapy.http import Request
 from wsf_scraping.items import NICEArticle
-from tools.dbTools import is_scraped, check_db
 from scrapy.spidermiddlewares.httperror import HttpError
 from twisted.internet.error import DNSLookupError
 from twisted.internet.error import TimeoutError
@@ -12,9 +11,9 @@ from twisted.internet.error import TimeoutError
 class NiceSpider(scrapy.Spider):
     name = 'nice'
 
-    # custom_settings = {
-    #     'JOBDIR': 'crawls/nice'
-    # }
+    custom_settings = {
+        'JOBDIR': 'crawls/nice'
+    }
 
     def on_error(self, failure):
         self.logger.error(repr(failure))
@@ -34,9 +33,6 @@ class NiceSpider(scrapy.Spider):
     def start_requests(self):
         """Set up the initial request to the website to scrape."""
 
-        # Check that the database is set up with the correct columns
-        check_db()
-
         articles_count = self.settings['NICE_ARTICLES_COUNT']
 
         # Initial URL (splited for PEP8 compliance). -1 length displays
@@ -52,7 +48,7 @@ class NiceSpider(scrapy.Spider):
             'referer': 'https://www.nice.org.uk/guidance/published'
         }
 
-        self.logger.info('Initial url: %s' % url)
+        self.logger.info('Initial url: %s', url)
         yield scrapy.Request(
             url=url,
             headers=headers,
@@ -178,8 +174,8 @@ class NiceSpider(scrapy.Spider):
 
         else:
             self.logger.info(
-                'No link found to download the pdf version (%s)'
-                % response.request.url
+                'No link found to download the pdf version (%s)',
+                response.request.url
             )
 
     def save_pdf(self, response):
@@ -195,15 +191,8 @@ class NiceSpider(scrapy.Spider):
         # Download PDF file to /tmp
         is_pdf = response.headers.get('content-type', '') == b'application/pdf'
 
-        if is_scraped(response.request.url):
-            self.logger.debug(
-                "Item already Dowmloaded or null - Canceling (%s)"
-                % response.request.url
-            )
-            return
-
         if not is_pdf:
-            self.logger.info('Not a PDF, aborting (%s)' % response.url)
+            self.logger.info('Not a PDF, aborting (%s)', response.url)
             return
 
         filename = ''.join([response.url.split('/')[-1], '.pdf'])
