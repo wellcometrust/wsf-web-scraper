@@ -36,9 +36,6 @@ COPY ./scrapy.cfg /wsf_scraper/scrapy.cfg
 COPY ./requirements.txt /wsf_scraper/requirements.txt
 
 RUN mkdir var
-# Update pip
-RUN pip3 install -qqq --upgrade pip
-RUN rm -f /usr/bin/python && ln /usr/bin/python3 /usr/bin/python
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
