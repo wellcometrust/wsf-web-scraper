@@ -48,7 +48,6 @@ class WsfScrapingPipeline(object):
             'results',
             'pdfs',
             spider_name,
-            '/'
         )
 
         # Convert PDF content to text format
