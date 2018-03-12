@@ -96,9 +96,10 @@ class WhoIrisSpider(scrapy.Spider):
 
         if not self.settings['WHO_IRIS_LIMIT']:
             # Follow next link
-            next_page = response.xpath(
-                './/a[contains(., "next")]/@href'
+            next_page = response.css(
+                 'ul.pagination li *:contains("next")::attr("href")'
             ).extract_first()
+
             yield Request(
                 url=response.urljoin(next_page),
                 callback=self.parse,
