@@ -28,6 +28,9 @@ class WhoIrisSpider(scrapy.Spider):
     def __init__(self, *args, **kwargs):
         settings = get_project_settings()
         years_list = kwargs.get('years_list', False)
+        id = kwargs.get('uuid', '')
+
+        self.uuid = id
         if years_list:
             self.years = years_list.split(',')
         else:

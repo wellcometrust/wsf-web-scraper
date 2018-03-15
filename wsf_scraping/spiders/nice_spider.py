@@ -15,6 +15,10 @@ class NiceSpider(scrapy.Spider):
         'JOBDIR': 'crawls/nice'
     }
 
+    def __init__(self, *args, **kwargs):
+        id = kwargs.get('uuid', '')
+        self.uuid = id
+
     def on_error(self, failure):
         self.logger.error(repr(failure))
 
