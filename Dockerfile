@@ -1,4 +1,4 @@
-# Use an official Ubuntu as a parent image
+# Use a basic Python image
 FROM python:3.6.4
 
 RUN apt-get update -yqq \
@@ -14,14 +14,14 @@ RUN apt-get update -yqq \
     locales \
   && apt-get -q clean
 
-# Build locales to avoid encoding issues with Scrapyd
+# Build locales to avoid encoding issues with Scrapy encoding
 RUN locale-gen en_GB.UTF-8
 
 ENV LC_ALL=en_GB.UTF-8
 ENV LANG=en_GB.UTF-8
 ENV LANGUAGE=en_GB.UTF-8
 
-# Set the working directory to /app
+# Set the working directory to /wsf_scraper
 WORKDIR /wsf_scraper
 
 # Copy the current directory contents into the container workdir
@@ -39,9 +39,8 @@ RUN mkdir var
 
 # Install any needed packages specified in requirements.txt
 RUN pip install -r requirements.txt
-RUN pip install flask
 
 # Run the flask file and expose the webservices
-EXPOSE 8080
+EXPOSE 5005
 
 CMD ["python", "api.py"]
