@@ -127,7 +127,7 @@ class ScrAPI(Flask):
 
     def list_spiders(self):
         spiders = self.process.spider_loader.list()
-        return jsonify({"data": {"spiders": spiders}}), 200
+        return jsonify({"spiders": spiders, "status": "success"}), 200
 
     def run_spider(self, spider):
         if spider == 'who_iris':
@@ -136,29 +136,29 @@ class ScrAPI(Flask):
             spider = nice_spider.NiceSpider()
         else:
             return '', 400
-        id = str(uuid.uuid4())
-        self.process.crawl(spider, uuid=id)
+        spider_id = str(uuid.uuid4())
+        self.process.crawl(spider, uuid=spider_id)
         crawl = self.process.join()
-        self.database.insert_spider(spider.name, id)
+        self.database.insert_spider(spider.name, spider_id)
         crawl.addBoth(self.on_success)
         return jsonify({
             "data": {
               "status": "running",
               "spider": spider.name,
-              "_id": id
+              "_id": spider_id
             }
         }), 200
 
     def on_success(self, data):
         self.database._close_all_spiders()
 
-    def close_spider(self, id):
+    def close_spider(self, spider_id):
         for crawl in self.process.crawlers:
             if crawl.spider.uuid == uuid:
                 crawl.stop()
                 return jsonify({
                     "data":
-                        {"status": "finished", "_id": id}
+                        {"status": "success", "_id": spider_id}
                     }), 200
         return '', 400
 
