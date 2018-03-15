@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+
 import os
 import logging
 from scrapy import spiderloader
-from tools import SQLite3Connector
+from tools import DatabaseConnector
 from tools.cleaners import parse_keywords_files, get_file_hash
 from scrapy.utils.project import get_project_settings
 from scrapy.exceptions import DropItem
@@ -26,6 +27,7 @@ class WsfScrapingPipeline(object):
 
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.INFO)
+        self.logger.info(self.keywords)
 
         spider_loader = spiderloader.SpiderLoader.from_settings(self.settings)
         spiders = spider_loader.list()
@@ -33,6 +35,8 @@ class WsfScrapingPipeline(object):
         for spider_name in spiders:
             folder_path = os.path.join('./', 'results', 'pdfs', spider_name)
             os.makedirs(folder_path, exist_ok=True)
+
+        self.database = DatabaseConnector()
 
     def check_keywords(self, item, spider_name, base_pdf_path):
         """Convert the pdf file to a python object and analyse it to find
@@ -98,7 +102,7 @@ class WsfScrapingPipeline(object):
             else:
                 os.rename(
                     ''.join(['/tmp/', item['pdf']]),
-                    ''.join([pdf_result_path, item['pdf']])
+                    ''.join([pdf_result_path + '/', item['pdf']])
                 )
         else:
             os.remove(base_pdf_path)
@@ -107,16 +111,14 @@ class WsfScrapingPipeline(object):
     def process_item(self, item, spider):
         """Process items sent by the spider."""
 
-        database = SQLite3Connector()
-
         base_pdf_path = os.path.join('/', 'tmp', item['pdf'])
         file_hash = get_file_hash(base_pdf_path)
-        if database.is_scraped(file_hash):
+        if self.database.is_scraped(file_hash):
             # File is already scraped in the database
             raise DropItem(
                 'Item footprint is already in the database'
             )
         full_item = self.check_keywords(item, spider.name, base_pdf_path)
-        database.insert_article(item['title'], file_hash, item['uri'])
+        self.database.insert_article(item['title'], file_hash, item['uri'])
 
         return full_item

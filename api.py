@@ -1,29 +1,37 @@
 import json
 import tempfile
+import uuid
 from datetime import datetime
-from tools import SQLite3Connector
+from tools import DatabaseConnector
 from flask import Flask, request, jsonify, send_file
 from scrapy.crawler import CrawlerRunner
 from scrapy.utils.project import get_project_settings
+from wsf_scraping.spiders import who_iris_spider, nice_spider
 from twisted.internet import reactor, endpoints
 from scrapy.utils.log import configure_logging
 from twisted.web import server, wsgi
 
 
-class ScrapyApi(Flask):
+class ScrAPI(Flask):
 
     def __init__(self, import_name=__package__, **kwargs):
-            super(ScrapyApi, self).__init__(import_name, **kwargs)
+            super(ScrAPI, self).__init__(import_name, **kwargs)
             configure_logging({'LOG_FORMAT': '%(levelname)s: %(message)s'})
             self._init_url_rules()
             self.process = CrawlerRunner(get_project_settings())
             self.tp = reactor.getThreadPool()
+            self.database = DatabaseConnector()
             self.response_meta = {"meta": {
                 "project": "WSF Web Scraper"
             }}
 
+    def __del__(self):
+        self.database._close_all_spiders()
+        self.database.cursor.close()
+        self.database.connection.close()
+
     def run(self, host=None, port=None, debug=None, **options):
-        super(ScrapyApi, self).run(host, port, debug, **options)
+        super(ScrAPI, self).run(host, port, debug, **options)
 
     def _get_meta_response(self, res):
         res.update(self.response_meta)
@@ -42,6 +50,11 @@ class ScrapyApi(Flask):
         self.add_url_rule(
             '/spiders/<string:spider>/run',
             view_func=self.run_spider,
+            methods=['GET'],
+        )
+        self.add_url_rule(
+            '/spiders/<string:id>/stop',
+            view_func=self.close_spider,
             methods=['GET'],
         )
         self.add_url_rule(
@@ -117,16 +130,46 @@ class ScrapyApi(Flask):
         return jsonify({"data": {"spiders": spiders}}), 200
 
     def run_spider(self, spider):
-        self.process.crawl(spider)
-        self.process.join()
-        return jsonify({"data": {"status": "running", "spider": spider}}), 200
+        if spider == 'who_iris':
+            spider = who_iris_spider.WhoIrisSpider()
+        elif spider == 'nice':
+            spider = nice_spider.NiceSpider()
+        else:
+            return '', 400
+        id = str(uuid.uuid4())
+        self.process.crawl(spider, uuid=id)
+        crawl = self.process.join()
+        self.database.insert_spider(spider.name, id)
+        crawl.addBoth(self.on_success)
+        return jsonify({
+            "data": {
+              "status": "running",
+              "spider": spider.name,
+              "_id": id
+            }
+        }), 200
+
+    def on_success(self, data):
+        self.database._close_all_spiders()
+
+    def close_spider(self, id):
+        for crawl in self.process.crawlers:
+            if crawl.spider.uuid == uuid:
+                crawl.stop()
+                return jsonify({
+                    "data":
+                        {"status": "finished", "_id": id}
+                    }), 200
+        return '', 400
 
     def list_crawls(self):
         crawls = self.process.crawlers
-        spiders = []
+        running_spiders = []
         for crawl in crawls:
             start_time = crawl.stats.get_value('start_time')
             spider = {
+                '_id':
+                    crawl.spider.uuid,
                 'spider':
                     crawl.spider.name,
                 'strart_time':
@@ -141,7 +184,11 @@ class ScrapyApi(Flask):
                     crawl.stats.get_value('downloader/request_count'),
             }
 
-            spiders.append(spider)
+            running_spiders.append(spider)
+        finished_spiders = []
+        for spider in self.database.get_finished_crawls():
+            finished_spiders.append(spider)
+        spiders = {"crawling": running_spiders, "finished": finished_spiders}
         return jsonify({"data": {"spiders": spiders}}), 200
 
     def stop(self):
@@ -149,8 +196,7 @@ class ScrapyApi(Flask):
         return jsonify({"data": {"status": "success"}}), 200
 
     def export_db(self):
-        database = SQLite3Connector()
-        articles_rows = database.get_articles()
+        articles_rows = self.database.get_articles()
         articles = []
         for row in articles_rows:
             articles.append({
@@ -178,12 +224,10 @@ class ScrapyApi(Flask):
             else:
                 return 'File format is not json.', 400
 
-            database = SQLite3Connector()
-
             try:
                 json_dict = json.loads(json_file)
                 for article in json_dict:
-                        database.insert_article(
+                        self.database.insert_article(
                             article.get('title', ''),
                             article.get('file_hash', ''),
                             article.get('url', '')
@@ -204,11 +248,17 @@ class ScrapyApi(Flask):
             return str(e), 500
 
 
-app = ScrapyApi(__name__)
+app = ScrAPI(__name__)
+
+
+def run_scrAPI():
+    resource = wsgi.WSGIResource(reactor, reactor.getThreadPool(), app)
+    site = server.Site(resource)
+    http_server = endpoints.TCP4ServerEndpoint(reactor, 5005)
+    http_server.listen(site)
+    reactor.run()
+    return reactor
+
 
 if __name__ == '__main__':
-        resource = wsgi.WSGIResource(reactor, reactor.getThreadPool(), app)
-        site = server.Site(resource)
-        http_server = endpoints.TCP4ServerEndpoint(reactor, 8080)
-        http_server.listen(site)
-        reactor.run()
+        run_scrAPI()

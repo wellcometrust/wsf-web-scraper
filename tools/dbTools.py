@@ -1,10 +1,12 @@
-import sqlite3
+import psycopg2
+import psycopg2.extras
 import logging
+import os
 
 
-class SQLite3Connector:
-    def __init__(self):
-        """Initialise an instance of the SQLite3Connector class and create:
+class DatabaseConnector:
+    def __init__(self, database_url=None):
+        """Initialise an instance of the DatabaseConnector class and create:
          - self.logger: a logger to log errors
          - self.connection: the connection to the sqlite3 database
          - self.cursor: the cursor to execute requests on the database
@@ -13,18 +15,33 @@ class SQLite3Connector:
         """
 
         self.logger = logging.getLogger(__name__)
-        self.connection = sqlite3.connect('db.sqlite3')
-        self.connection.row_factory = sqlite3.Row
-        self.cursor = self.connection.cursor()
+        if not database_url:
+            database_url = os.getenv('DATABASE_URL')
+        self.connection = psycopg2.connect(
+            os.getenv('DATABASE_URL')
+        )
+        self.cursor = self.connection.cursor(
+            cursor_factory=psycopg2.extras.NamedTupleCursor
+        )
         self._check_db()
 
     def __del__(self):
         """Commit all changes and close the database connection on the deletion
         of this instance from memory.
         """
+        self._close_all_spiders()
         self.connection.commit()
         self.cursor.close()
         self.connection.close()
+
+    def _close_all_spiders(self):
+        self._execute(
+            """
+            UPDATE spiders
+            SET status = %s, end_time = CURRENT_TIMESTAMP;
+            """,
+            ('finished',)
+        )
 
     def _execute(self, query, params=()):
         """Try to execute the SQL query passed by the query parameter, with the
@@ -32,7 +49,8 @@ class SQLite3Connector:
         """
         try:
             self.cursor.execute(query, params)
-        except sqlite3.Error as error:
+            self.connection.commit()
+        except Exception:
             self.logger.error(
                 'An exception had been encountered when executing %s',
                 query,
@@ -45,22 +63,36 @@ class SQLite3Connector:
             """
             CREATE TABLE IF NOT EXISTS article
             (
-                id INTEGER PRIMARY KEY,
-                title VARCHAR(64),
+                id SERIAL PRIMARY KEY,
+                title VARCHAR(255),
                 url VARCHAR(255),
                 file_hash VARCHAR(32),
-                scrap_again INTEGER(1) DEFAULT(0),
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+                scrap_again BOOLEAN DEFAULT FALSE,
+                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
         )
+        self._execute(
+            """
+            CREATE TABLE IF NOT EXISTS spiders
+            (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(64),
+                uuid VARCHAR(64),
+                status VARCHAR(255),
+                end_time TIMESTAMP,
+                start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        )
+        self.connection.commit()
 
     def reset_scraped(self):
         """Set all the articles `scrap_again` attribute to 1, forcing the web
         scraper to download and analyse them again.
         """
         self._execute(
-            "UPDATE article SET scrap_again = ?",
+            "UPDATE article SET scrap_again = %s",
             (1,)
         )
 
@@ -70,17 +102,18 @@ class SQLite3Connector:
             "DELETE FROM article"
         )
 
-    def close_connection(self):
-        """Close the connection to the database and commit every changes."""
-
     def is_scraped(self, file_hash):
         """Check if an article had already been scraped by looking for its file
         hash into the database. Is the `scrap_again` attribute is true, return
         False anyway.
         """
         self._execute(
-            "SELECT id FROM article WHERE file_hash = ? AND scrap_again = ?",
-            (file_hash, 0)
+            """
+            SELECT id
+            FROM article
+            WHERE file_hash = %s AND scrap_again IS NOT TRUE;
+            """,
+            (file_hash,)
         )
         result = self.cursor.fetchone()
         return result or None
@@ -91,7 +124,7 @@ class SQLite3Connector:
         """
         if limit > 0:
             self._execute(
-                "SELECT title, file_hash, url FROM article LIMIT ? OFFSET ?",
+                "SELECT title, file_hash, url FROM article LIMIT %s OFFSET %s",
                 (offset, limit,)
             )
         else:
@@ -106,6 +139,29 @@ class SQLite3Connector:
         into the database.
         """
         self._execute(
-            "INSERT INTO article (title, file_hash, url) VALUES (?, ?, ?)",
-            (title, file_hash, url)
+            "INSERT INTO article (title, file_hash, url) VALUES (%s, %s, %s)",
+            (title[:255], file_hash, url[:255])
+        )
+
+    def get_finished_crawls(self):
+        self._execute("SELECT * FROM spiders WHERE status = %s", ('finished',))
+        result = []
+        for article in self.cursor:
+            result.append(article)
+        return result
+
+    def insert_spider(self, name, uuid):
+        self._execute(
+            "INSERT INTO spiders (name, uuid, status) VALUES (%s, %s, %s)",
+            (name[:255], uuid, 'running')
+        )
+
+    def close_spider(self, uuid):
+        self._execute(
+            """
+            UPDATE spiders
+            WHERE uuid = %s
+            SET status = %s, end_time = CURRENT_TIMESTAMP;
+            """,
+            (uuid, 'finished')
         )
