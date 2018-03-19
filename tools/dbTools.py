@@ -91,7 +91,7 @@ class DatabaseConnector:
         """
         self._execute(
             "UPDATE article SET scrap_again = %s",
-            (1,)
+            ('True',)
         )
 
     def clear_db(self):

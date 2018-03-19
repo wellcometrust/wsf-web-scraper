@@ -200,25 +200,26 @@ class ScrAPI(Flask):
     def export_db(self):
         articles_rows = self.database.get_articles()
         articles = []
+        now = datetime.now()
         for row in articles_rows:
             articles.append({
-                'title': row['title'],
-                'file_hash': row['file_hash'],
-                'url': row['url'],
+                'title': row[0],
+                'file_hash': row[1],
+                'url': row[2],
             })
         json_file = tempfile.NamedTemporaryFile()
-        json_file.write(json.dumps(articles).encode())
+        json_file.write(json.dumps(articles).encode('utf-8'))
         json_file.seek(0)
         return send_file(
             json_file,
             mimetype='application/json',
             as_attachment=True,
-            attachment_filename='export.json'
+            attachment_filename=f'export-{now}.json'
         )
 
     def import_db(self):
         if request.files:
-            data_file = request.files.get('file_url', None)
+            data_file = request.files.get('file', None)
             if data_file.filename == '':
                 return 'Filename must not be blank', 400
             if data_file.content_type == 'application/json':
