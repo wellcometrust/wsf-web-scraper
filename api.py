@@ -43,44 +43,44 @@ class ScrAPI(Flask):
         """
 
         self.add_url_rule(
-            '/spiders/list',
+            '/spiders',
             view_func=self.list_spiders,
             methods=['GET'],
         )
         self.add_url_rule(
-            '/spiders/<string:spider>/run',
+            '/spiders',
             view_func=self.run_spider,
-            methods=['GET'],
+            methods=['POST'],
         )
         self.add_url_rule(
-            '/spiders/<string:id>/stop',
+            '/spiders/<int:spider_id>',
             view_func=self.close_spider,
-            methods=['GET'],
+            methods=['DELETE'],
         )
         self.add_url_rule(
-            '/scraped/import',
+            '/database',
             view_func=self.import_db,
             methods=['POST'],
         )
         self.add_url_rule(
-            '/scraped/export',
+            '/database',
             view_func=self.export_db,
             methods=['GET'],
         )
         self.add_url_rule(
-            '/scraped/reset',
+            '/database',
             view_func=self.clear_scraps,
-            methods=['GET'],
+            methods=['DELETE'],
         )
         self.add_url_rule(
-            '/crawls/list',
+            '/crawls',
             view_func=self.list_crawls,
             methods=['GET'],
         )
         self.add_url_rule(
-            '/crawls/stop',
+            '/crawls',
             view_func=self.stop,
-            methods=['GET'],
+            methods=['DELETE'],
         )
         self.add_url_rule(
             '/',
@@ -102,7 +102,7 @@ class ScrAPI(Flask):
                 }
             },
             {
-                "url": "/crawls/list",
+                "url": "/crawls",
                 "method": "GET"
             },
             {
@@ -129,7 +129,9 @@ class ScrAPI(Flask):
         spiders = self.process.spider_loader.list()
         return jsonify({"spiders": spiders, "status": "success"}), 200
 
-    def run_spider(self, spider):
+    def run_spider(self):
+        post_data = request.get_json()
+        spider = post_data.get('spider')
         if spider == 'who_iris':
             spider = who_iris_spider.WhoIrisSpider()
         elif spider == 'nice':
