@@ -91,14 +91,21 @@ class ScrAPI(Flask):
     def home(self):
         routes = [
             {
-                "url": "/spiders/list",
+                "url": "/spiders",
                 "method": "GET"
             },
             {
-                "url": "/spiders/:spider/run",
-                "method": "GET",
+                "url": "/spiders",
+                "method": "POST",
                 "arguments": {
                     "spider": "name of the spider to run"
+                }
+            },
+            {
+                "url": "/spiders/:spider_id",
+                "method": "DELETE",
+                "arguments": {
+                    "spider_id": "uuid of the spider to close"
                 }
             },
             {
@@ -106,20 +113,23 @@ class ScrAPI(Flask):
                 "method": "GET"
             },
             {
-                "url": "/crawls/stop",
+                "url": "/crawls",
+                "method": "DELETE"
+            },
+            {
+                "url": "/database",
                 "method": "GET"
             },
             {
-                "url": "/scraped/export",
-                "method": "GET"
+                "url": "/database",
+                "method": "POST",
+                "arguments": {
+                    "file": "json file containing the database dump"
+                }
             },
             {
-                "url": "/scraped/import",
-                "method": "POST"
-            },
-            {
-                "url": "/scraped/reset",
-                "method": "GET"
+                "url": "/database",
+                "method": "DELETE"
             }
         ]
         result = self._get_meta_response({"routes": routes})
