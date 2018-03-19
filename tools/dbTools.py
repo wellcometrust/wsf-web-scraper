@@ -17,9 +17,7 @@ class DatabaseConnector:
         self.logger = logging.getLogger(__name__)
         if not database_url:
             database_url = os.getenv('DATABASE_URL')
-        self.connection = psycopg2.connect(
-            os.getenv('DATABASE_URL')
-        )
+        self.connection = psycopg2.connect(database_url)
         self.cursor = self.connection.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
         )
@@ -50,7 +48,7 @@ class DatabaseConnector:
         try:
             self.cursor.execute(query, params)
             self.connection.commit()
-        except Exception:
+        except psycopg2.Error as e:
             self.logger.error(
                 'An exception had been encountered when executing %s',
                 query,
