@@ -136,9 +136,21 @@ class DatabaseConnector:
         """Try to insert an article, composed by its title, file hash and url,
         into the database.
         """
+
+        if len(title) > 255:
+            self.logger.warning(
+                f'Article title ({title}) is too long ({len(title)}/255).'
+            )
+            title = title[:255]
+
+        if len(url) > 255:
+            self.logger.warning(
+                f'Article title ({url}) is too long ({len(url)}/255).'
+            )
+            url = url[:255]
         self._execute(
             "INSERT INTO article (title, file_hash, url) VALUES (%s, %s, %s)",
-            (title[:255], file_hash, url[:255])
+            (title, file_hash, url)
         )
 
     def get_finished_crawls(self):
