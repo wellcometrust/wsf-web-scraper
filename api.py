@@ -147,7 +147,7 @@ class ScrAPI(Flask):
         elif spider == 'nice':
             spider = nice_spider.NiceSpider()
         else:
-            return '', 400
+            return '', 404
         spider_id = str(uuid.uuid4())
         self.process.crawl(spider, uuid=spider_id)
         crawl = self.process.join()
@@ -184,7 +184,7 @@ class ScrAPI(Flask):
                     crawl.spider.uuid,
                 'spider':
                     crawl.spider.name,
-                'strart_time':
+                'start_time':
                     start_time,
                 'total_time':
                     str(datetime.now() - start_time),
@@ -211,11 +211,11 @@ class ScrAPI(Flask):
         articles_rows = self.database.get_articles()
         articles = []
         now = datetime.now()
-        for row in articles_rows:
+        for title, file_hash, url in articles_rows:
             articles.append({
-                'title': row[0],
-                'file_hash': row[1],
-                'url': row[2],
+                'title': title,
+                'file_hash': file_hash,
+                'url': url,
             })
         json_file = tempfile.NamedTemporaryFile()
         json_file.write(json.dumps(articles).encode('utf-8'))
@@ -229,21 +229,21 @@ class ScrAPI(Flask):
 
     def import_db(self):
         if request.files:
-            data_file = request.files.get('file', None)
+            data_file = request.files.get('file')
             if data_file.filename == '':
                 return 'Filename must not be blank', 400
             if data_file.content_type == 'application/json':
                 json_file = data_file.stream.read()
             else:
-                return 'File format is not json.', 400
+                return 'File format is not json.', 415
 
             try:
                 json_dict = json.loads(json_file)
                 for article in json_dict:
                         self.database.insert_article(
-                            article.get('title', ''),
-                            article.get('file_hash', ''),
-                            article.get('url', '')
+                            article.get('title'),
+                            article.get('file_hash'),
+                            article.get('url')
                         )
 
                 return '', 201

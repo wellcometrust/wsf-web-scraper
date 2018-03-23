@@ -101,8 +101,8 @@ class WsfScrapingPipeline(object):
                 pass
             else:
                 os.rename(
-                    ''.join(['/tmp/', item['pdf']]),
-                    ''.join([pdf_result_path + '/', item['pdf']])
+                    os.path.join('/', 'tmp', item['pdf']),
+                    os.path.join(pdf_result_path, '/', item['pdf'])
                 )
         else:
             os.remove(base_pdf_path)
