@@ -58,15 +58,15 @@ class WhoIrisSpider(scrapy.Spider):
         self.data['rpp'] = self.settings['WHO_IRIS_RPP']
         urls = []
         # Initial URL (splited for PEP8 compliance)
-        base_url = 'http://apps.who.int/iris/simple-search'
-        url = base_url + '?location={location}&query={query}&rpp={rpp}'
-        url += '&sort_by={sort_by}&order={order}'
-        url += '&filter_field_1={filter_field_1}&filter_type_1={filter_type_1}'
-        url += '&filter_value_1={filter_value_1}&filter_field_2=language'
-        url += '&filter_type_2=equals&filter_value_2=en&filternumbits=apply'
+        base_url = 'http://apps.who.int/iris/discover'
+        url = base_url + '?&rpp={rpp}&etal=0&group_by=none'
+        url += '&filtertype_0=dateIssued&filtertype_1=iso'
+        url += '&filter_relational_operator_0=contains'
+        url += '&filter_relational_operator_1=contains'
+        url += '&filter_1=en&filter_0={filter_0}'
 
         for year in self.years:
-            self.data['filter_value_1'] = year
+            self.data['filter_0'] = year
             # Format it with initial data and launch the process
             urls.append((url.format(**self.data), year))
 
@@ -83,13 +83,13 @@ class WhoIrisSpider(scrapy.Spider):
     def parse(self, response):
         """ Parse the articles listing page and go to the next one.
 
-        @url http://apps.who.int/iris/simple-search?rpp=3
+        @url http://apps.who.int/iris/discover?rpp=3
         @returns items 0 0
         @returns requests 3 4
         """
 
         year = response.meta.get('year', {})
-        for href in response.css('.list-group-item::attr(href)').extract():
+        for href in response.css('.artifact-title a::attr(href)').extract():
             yield Request(
                 url=response.urljoin(href),
                 callback=self.parse_article,
@@ -100,7 +100,7 @@ class WhoIrisSpider(scrapy.Spider):
         if not self.settings['WHO_IRIS_LIMIT']:
             # Follow next link
             next_page = response.css(
-                 'ul.pagination li *:contains("next")::attr("href")'
+                 'next-page-link::attr("href")'
             ).extract_first()
 
             yield Request(
@@ -133,7 +133,9 @@ class WhoIrisSpider(scrapy.Spider):
             data_dict[label] = value
 
         # Scrap all the pdf on the page, passing scrapped metadata
-        href = response.css('a[href$=".pdf"]::attr(href)').extract_first()
+        href = response.css(
+            '.item-page-field-wrapper a:contains("pdf")::attr("href")'
+        ).extract_first()
         if href:
             yield Request(
                 url=response.urljoin(href),
@@ -156,7 +158,7 @@ class WhoIrisSpider(scrapy.Spider):
         @returns requests 0 0
         """
 
-        is_pdf = response.headers.get('content-type', '') == b'application/pdf'
+        is_pdf = b'application/pdf' in response.headers.get('content-type', '')
 
         if not is_pdf:
             self.logger.info('Not a PDF, aborting (%s)', response.url)
@@ -165,7 +167,9 @@ class WhoIrisSpider(scrapy.Spider):
         # Retrieve metadata
         data_dict = response.meta.get('data_dict', {})
         # Download PDF file to /tmp
-        filename = response.url.split('/')[-1]
+        filename = response.url.split('/')[-1].replace(
+            '?sequence=1&isAllowed=y', ''
+        )
         with open('/tmp/' + filename, 'wb') as f:
             f.write(response.body)
 
