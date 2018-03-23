@@ -101,8 +101,8 @@ class WsfScrapingPipeline(object):
                 pass
             else:
                 os.rename(
-                    os.path.join('/', 'tmp', item['pdf']),
-                    os.path.join(pdf_result_path, '/', item['pdf'])
+                    os.path.join('/tmp', item['pdf']),
+                    os.path.join(pdf_result_path, item['pdf'])
                 )
         else:
             os.remove(base_pdf_path)
@@ -111,7 +111,7 @@ class WsfScrapingPipeline(object):
     def process_item(self, item, spider):
         """Process items sent by the spider."""
 
-        base_pdf_path = os.path.join('/', 'tmp', item['pdf'])
+        base_pdf_path = os.path.join('/tmp', item['pdf'])
         file_hash = get_file_hash(base_pdf_path)
         if self.database.is_scraped(file_hash):
             # File is already scraped in the database
