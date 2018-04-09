@@ -1,4 +1,5 @@
 # # -*- coding: utf-8 -*-
+
 import re
 import hashlib
 import logging
@@ -17,7 +18,7 @@ def parse_keywords_files(file_path):
     logger.debug("Try to open keyword files")
     keywords_list = []
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, 'r', encoding='utf-8') as f:
             logger.debug("Successfully opened %s", file_path)
             for line in f:
                 line = line.replace('\n', '')
