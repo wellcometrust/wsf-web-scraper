@@ -1,6 +1,6 @@
 import math
 import os
-import subprocess
+from subprocess import Popen, PIPE
 from bs4 import BeautifulSoup as bs
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -119,9 +119,14 @@ def parse_pdf_document_pdftxt(document):
             document.name,
             parsed_path
             ]
-    subprocess.call(cmd)
-    # stdout, stderr = p.communicate()
-    html_file = open(parsed_path, 'r', encoding='utf-8')
+
+    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = p.communicate()
+
+    if p.returncode:
+        return None, stderr
+
+    html_file = open(parsed_path, 'rb')
     soup = bs(html_file.read(), 'html.parser')
     file_pages = []
     pages = soup.find_all('page')
@@ -159,7 +164,7 @@ def parse_pdf_document_pdftxt(document):
     pdf_file = PdfFile(file_pages)
     html_file.close()
     os.remove(parsed_path)
-    return pdf_file
+    return pdf_file, None
 
 
 def grab_section(pdf_file, keyword):

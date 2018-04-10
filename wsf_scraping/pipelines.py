@@ -73,6 +73,9 @@ class WsfScrapingPipeline(object):
             else:
                 pdf_file = parse_pdf_document(f)
 
+            if not pdf_file:
+                return item
+
             for keyword in self.section_keywords:
                 # Fetch references or other keyworded list
                 section = grab_section(pdf_file, keyword)
