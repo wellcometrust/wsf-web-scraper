@@ -1,4 +1,5 @@
 import scrapy
+from urllib.parse import urlparse
 from scrapy.http import Request
 from tools.cleaners import clean_html
 from wsf_scraping.items import WHOArticle
@@ -12,14 +13,7 @@ class WhoIrisSpider(scrapy.Spider):
     name = 'who_iris'
     # All these parameters are optionnal,
     # but it is good to set a result per page ubove 250, to limit query number
-    data = {
-        'location': '',
-        'query': '',
-        'sort_by': 'score',
-        'filter_field_1': 'dateIssued',
-        'filter_type_1': 'equals',
-        'order': 'desc',
-    }
+    data = {}
 
     custom_settings = {
         'JOBDIR': 'crawls/who_iris'
@@ -41,7 +35,11 @@ class WhoIrisSpider(scrapy.Spider):
 
         if failure.check(HttpError):
             response = failure.value.response
-            self.logger.error('HttpError on %s', response.url)
+            self.logger.error(
+                'HttpError on %s (%s)',
+                response.url,
+                response.status,
+            )
 
         elif failure.check(DNSLookupError):
             request = failure.request
@@ -167,9 +165,7 @@ class WhoIrisSpider(scrapy.Spider):
         # Retrieve metadata
         data_dict = response.meta.get('data_dict', {})
         # Download PDF file to /tmp
-        filename = response.url.split('/')[-1].replace(
-            '?sequence=1&isAllowed=y', ''
-        )
+        filename = urlparse(response.url).path.split('/')[-1]
         with open('/tmp/' + filename, 'wb') as f:
             f.write(response.body)
 
