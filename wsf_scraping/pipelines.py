@@ -69,11 +69,16 @@ class WsfScrapingPipeline(object):
             )
 
             if self.settings['PARSING_METHOD'] == 'pdftotext':
-                pdf_file = parse_pdf_document_pdftxt(f)
+                pdf_file, err = parse_pdf_document_pdftxt(f)
             else:
-                pdf_file = parse_pdf_document(f)
+                pdf_file, err = parse_pdf_document(f)
 
             if not pdf_file:
+                self.logger.warning(
+                    "The pdf [%s] could not be converted: %s",
+                    item['pdf'],
+                    err,
+                )
                 return item
 
             for keyword in self.section_keywords:

@@ -102,7 +102,7 @@ def parse_pdf_document(pdffile):
 
     # Create a new PdfFile with the pages
     pdf_file = PdfFile(pdf_pages, has_bold)
-    return pdf_file
+    return pdf_file, None
 
 
 def parse_pdf_document_pdftxt(document):
