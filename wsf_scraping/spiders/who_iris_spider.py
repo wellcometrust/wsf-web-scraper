@@ -1,7 +1,7 @@
 import scrapy
 from urllib.parse import urlparse
 from scrapy.http import Request
-from tools.cleaners import clean_html
+from collections import defaultdict
 from wsf_scraping.items import WHOArticle
 from scrapy.utils.project import get_project_settings
 from scrapy.spidermiddlewares.httperror import HttpError
@@ -88,8 +88,9 @@ class WhoIrisSpider(scrapy.Spider):
 
         year = response.meta.get('year', {})
         for href in response.css('.artifact-title a::attr(href)').extract():
+            full_records_link = ''.join([href, '?show=full'])
             yield Request(
-                url=response.urljoin(href),
+                url=response.urljoin(full_records_link),
                 callback=self.parse_article,
                 errback=self.on_error,
                 meta={'year': year}
@@ -113,27 +114,40 @@ class WhoIrisSpider(scrapy.Spider):
         """ Scrape the article metadata from the detailed article page. Then,
         redirect to the PDF page.
 
-        @url http://apps.who.int/iris/handle/10665/123400
+        @url http://apps.who.int/iris/handle/10665/272346?show=full
         @returns requests 1 1
         @returns items 0 0
         """
 
-        year = response.meta.get('year', {})
         data_dict = {
-            'Year': year,
+            'year': response.meta.get('year', {}),
         }
-        for tr in response.css('table.itemDisplayTable tr'):
-            label = tr.css('td.metadataFieldLabel::text').extract_first()
-            label = label[:label.find(':')]
-            # Remove HTML markdown for some metadata are in a <a>
-            value = clean_html(tr.css('td.metadataFieldValue').extract_first())
+        data_dict['title'] = response.css(
+            'h2.page-header::text'
+        ).extract_first()
 
-            data_dict[label] = value
+        details_dict = defaultdict(list)
+        for line in response.css('.detailtable tr'):
+
+            # Each tr should have 2 to 3 td: attribute, value and language.
+            tds = line.css('td::text').extract()
+            if len(tds) < 2:
+                continue
+
+            # Make attribute human readable
+            attr_name = ' '.join(tds[0].split('.')[1:]).lower()
+            details_dict[attr_name].append(f'{tds[1]}')
 
         # Scrap all the pdf on the page, passing scrapped metadata
         href = response.css(
-            '.item-page-field-wrapper a:contains("pdf")::attr("href")'
+            '.file-link a::attr("href")'
         ).extract_first()
+
+        data_dict['subjects'] = details_dict.get('subject mesh', '')
+        data_dict['types'] = details_dict.get('type', '')
+        data_dict['authors'] = ', '.join(
+            details_dict.get('contributor author', [])
+        )
         if href:
             yield Request(
                 url=response.urljoin(href),
@@ -171,10 +185,10 @@ class WhoIrisSpider(scrapy.Spider):
 
         # Populate a WHOArticle Item
         who_article = WHOArticle({
-                'title': data_dict.get('Title', ''),
+                'title': data_dict.get('title', ''),
                 'uri': response.request.url,
-                'year': data_dict.get('Year', ''),
-                'authors': data_dict.get('Authors', ''),
+                'year': data_dict.get('year', ''),
+                'authors': data_dict.get('authors', ''),
                 'pdf': filename,
                 'sections': {},
                 'keywords': {}

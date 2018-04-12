@@ -1,5 +1,5 @@
 from .dbTools import DatabaseConnector
-from . import cleaners
+from . import utils
 from .DSXFeedStorage import DSXFeedStorage
 
-__all__ = [DatabaseConnector, cleaners, DSXFeedStorage]
+__all__ = [DatabaseConnector, utils, DSXFeedStorage]

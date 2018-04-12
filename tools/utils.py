@@ -1,15 +1,7 @@
 # # -*- coding: utf-8 -*-
 
-import re
 import hashlib
 import logging
-
-
-def clean_html(raw_html):
-    """Remove HTML tags from scrapped HTML."""
-    regex = re.compile(u'<.*?>')
-    clean_text = re.sub(regex, '', raw_html)
-    return clean_text
 
 
 def parse_keywords_files(file_path):

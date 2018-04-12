@@ -4,7 +4,7 @@ import os
 import logging
 from scrapy import spiderloader
 from tools import DatabaseConnector
-from tools.cleaners import parse_keywords_files, get_file_hash
+from tools.utils import parse_keywords_files, get_file_hash
 from scrapy.utils.project import get_project_settings
 from scrapy.exceptions import DropItem
 from pdf_parser.pdf_parse import (parse_pdf_document, grab_section,
@@ -127,6 +127,6 @@ class WsfScrapingPipeline(object):
                 'Item footprint is already in the database'
             )
         full_item = self.check_keywords(item, spider.name, base_pdf_path)
-        self.database.insert_article(item['title'], file_hash, item['uri'])
+        self.database.insert_article(file_hash, item['uri'])
 
         return full_item
