@@ -1,5 +1,5 @@
 import scrapy
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlencode
 from scrapy.http import Request
 from collections import defaultdict
 from wsf_scraping.items import WHOArticle
@@ -53,15 +53,21 @@ class WhoIrisSpider(scrapy.Spider):
         """ This sets up the urls to scrape for each years.
         """
 
-        self.data['rpp'] = self.settings['WHO_IRIS_RPP']
         urls = []
         # Initial URL (splited for PEP8 compliance)
+        query_dict = {
+            'rpp': self.settings['WHO_IRIS_RPP'],
+            'etal': 0,
+            'group_by': 'none',
+            'filtertype_0': 'dateIssued',
+            'filtertype_1': 'iso',
+            'filter_relational_operator_0': 'contains',
+            'filter_relational_operator_1': 'contains',
+            'filter_1': 'en',
+        }
         base_url = 'http://apps.who.int/iris/discover'
-        url = base_url + '?&rpp={rpp}&etal=0&group_by=none'
-        url += '&filtertype_0=dateIssued&filtertype_1=iso'
-        url += '&filter_relational_operator_0=contains'
-        url += '&filter_relational_operator_1=contains'
-        url += '&filter_1=en&filter_0={filter_0}'
+        query_params = urlencode(query_dict) + '&filter_0={filter_0}'
+        url = base_url + '?' + query_params
 
         for year in self.years:
             self.data['filter_0'] = year
@@ -130,6 +136,7 @@ class WhoIrisSpider(scrapy.Spider):
         for line in response.css('.detailtable tr'):
 
             # Each tr should have 2 to 3 td: attribute, value and language.
+            # We're only interested in the first and the second one.
             tds = line.css('td::text').extract()
             if len(tds) < 2:
                 continue

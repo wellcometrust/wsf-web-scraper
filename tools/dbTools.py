@@ -132,7 +132,7 @@ class DatabaseConnector:
         return result
 
     def insert_article(self, file_hash, url):
-        """Try to insert an article, composed by its title, file hash and url,
+        """Try to insert an article, composed by its file hash and url,
         into the database.
         """
 

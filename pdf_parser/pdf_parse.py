@@ -1,6 +1,6 @@
 import math
 import os
-from subprocess import Popen, PIPE
+import subprocess
 from bs4 import BeautifulSoup as bs
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -120,11 +120,10 @@ def parse_pdf_document_pdftxt(document):
             parsed_path
             ]
 
-    p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-    stdout, stderr = p.communicate()
-
-    if p.returncode:
-        return None, stderr
+    try:
+        subprocess.check_call(cmd)
+    except subprocess.CalledProcessError as e:
+        return None, e.stderr
 
     html_file = open(parsed_path, 'rb')
     soup = bs(html_file.read(), 'html.parser')
