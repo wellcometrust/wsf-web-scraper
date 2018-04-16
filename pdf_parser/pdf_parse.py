@@ -1,6 +1,7 @@
 import math
 import os
 import subprocess
+import logging
 from bs4 import BeautifulSoup as bs
 from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfinterp import PDFResourceManager
@@ -102,7 +103,7 @@ def parse_pdf_document(pdffile):
 
     # Create a new PdfFile with the pages
     pdf_file = PdfFile(pdf_pages, has_bold)
-    return pdf_file, None
+    return pdf_file
 
 
 def parse_pdf_document_pdftxt(document):
@@ -110,10 +111,10 @@ def parse_pdf_document_pdftxt(document):
     PdfFile object, easier to analyse.
     """
 
+    logger = logging.getLogger(__name__)
     parsed_path = document.name.replace('.pdf', '.xml')
     cmd = [
             'pdftohtml',
-            '-q',
             '-i',
             '-xml',
             document.name,
@@ -121,9 +122,15 @@ def parse_pdf_document_pdftxt(document):
             ]
 
     try:
-        subprocess.check_call(cmd)
+        with open(os.devnull, 'w') as FNULL:
+            subprocess.check_call(cmd, stdout=FNULL)
     except subprocess.CalledProcessError as e:
-        return None, e.stderr
+        logger.warning(
+            "The pdf [%s] could not be converted: %s",
+            document.name,
+            e.sdterr,
+        )
+        return None
 
     html_file = open(parsed_path, 'rb')
     soup = bs(html_file.read(), 'html.parser')
@@ -163,7 +170,7 @@ def parse_pdf_document_pdftxt(document):
     pdf_file = PdfFile(file_pages)
     html_file.close()
     os.remove(parsed_path)
-    return pdf_file, None
+    return pdf_file
 
 
 def grab_section(pdf_file, keyword):
