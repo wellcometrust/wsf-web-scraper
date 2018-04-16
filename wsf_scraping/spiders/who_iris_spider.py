@@ -142,6 +142,7 @@ class WhoIrisSpider(scrapy.Spider):
                 continue
 
             # Make attribute human readable
+            # (first part is always 'dc', so skip it)
             attr_name = ' '.join(tds[0].split('.')[1:]).lower()
             details_dict[attr_name].append(f'{tds[1]}')
 
@@ -150,8 +151,8 @@ class WhoIrisSpider(scrapy.Spider):
             '.file-link a::attr("href")'
         ).extract_first()
 
-        data_dict['subjects'] = details_dict.get('subject mesh', '')
-        data_dict['types'] = details_dict.get('type', '')
+        data_dict['subjects'] = details_dict.get('subject mesh', [])
+        data_dict['types'] = details_dict.get('type', [])
         data_dict['authors'] = ', '.join(
             details_dict.get('contributor author', [])
         )
@@ -196,6 +197,8 @@ class WhoIrisSpider(scrapy.Spider):
                 'uri': response.request.url,
                 'year': data_dict.get('year', ''),
                 'authors': data_dict.get('authors', ''),
+                'types': data_dict.get('types'),
+                'subjects': data_dict.get('subjects'),
                 'pdf': filename,
                 'sections': {},
                 'keywords': {}
