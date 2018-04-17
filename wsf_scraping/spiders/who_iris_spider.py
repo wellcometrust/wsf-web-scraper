@@ -178,7 +178,8 @@ class WhoIrisSpider(scrapy.Spider):
         @returns requests 0 0
         """
 
-        is_pdf = b'application/pdf' in response.headers.get('content-type', '')
+        content_type = response.headers.get('content-type', '').split(b';')[0]
+        is_pdf = b'application/pdf' == content_type
 
         if not is_pdf:
             self.logger.info('Not a PDF, aborting (%s)', response.url)
