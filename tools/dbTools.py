@@ -62,7 +62,6 @@ class DatabaseConnector:
             CREATE TABLE IF NOT EXISTS article
             (
                 id SERIAL PRIMARY KEY,
-                title VARCHAR(255),
                 url VARCHAR(255),
                 file_hash VARCHAR(32),
                 scrap_again BOOLEAN DEFAULT FALSE,
@@ -132,25 +131,19 @@ class DatabaseConnector:
             result.append(article)
         return result
 
-    def insert_article(self, title, file_hash, url):
-        """Try to insert an article, composed by its title, file hash and url,
+    def insert_article(self, file_hash, url):
+        """Try to insert an article, composed by its file hash and url,
         into the database.
         """
 
-        if len(title) > 255:
-            self.logger.warning(
-                f'Article title ({title}) is too long ({len(title)}/255).'
-            )
-            title = title[:255]
-
-        if len(url) > 255:
+        if len(url) >= 255:
             self.logger.warning(
                 f'Article title ({url}) is too long ({len(url)}/255).'
             )
             url = url[:255]
         self._execute(
-            "INSERT INTO article (title, file_hash, url) VALUES (%s, %s, %s)",
-            (title, file_hash, url)
+            "INSERT INTO article (file_hash, url) VALUES (%s, %s)",
+            (file_hash, url)
         )
 
     def get_finished_crawls(self):
