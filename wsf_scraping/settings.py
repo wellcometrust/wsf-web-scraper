@@ -32,7 +32,7 @@ FEED_STORAGES = {
 # LOG_ENABLED = False
 LOG_LEVEL = 'INFO'
 LOG_FORMATTER = 'wsf_scraping.middlewares.PoliteLogFormatter'
-LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
+# LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
 # Set pdfminer log to WARNING
 logging.getLogger("pdfminer").setLevel(logging.WARNING)
 DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
@@ -92,21 +92,12 @@ if FEED_CONFIG == 'S3':
     AWS_ACCESS_KEY_ID = ''
     AWS_SECRET_ACCESS_KEY = ''
     AWS_FEED_CONTAINER = ''
+    DATABASE_ADAPTOR = 'dynamodb'
     FEED_URI = 's3://' + AWS_FEED_CONTAINER + '/%(name)s - %(time)s.json'
-
-if FEED_CONFIG == 'DSX':
-    DSX_FEED_CONTAINER = 'OSProject'
-    DSX_AUTH_URL = "https://identity.open.softlayer.com/v3/auth/tokens"
-    DSX_CREDENTIALS = {
-        "region": "",
-        "username": "",
-        "password": "",
-        "domainId": ""
-    }
-    FEED_URI = 'dsx://' + DSX_FEED_CONTAINER + '/%(name)s - %(time)s.json'
 
 else:
     # By default, log the results in a local folder
+    DATABASE_ADAPTOR = 'postgresql'
     FEED_URI = './results/%(name)s.json'
 
 # Lists to look for (case insensitive)
