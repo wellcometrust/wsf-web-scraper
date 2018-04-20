@@ -65,6 +65,9 @@ class DynamoDBConnector:
         return table
 
     def insert_article(self, file_hash, url):
+        """Try to insert an article and its url in the article table. Return
+        dynamodb response or `None` if the request fail.
+        """
         try:
             table = self.dynamodb.Table("scraper_articles")
             response = table.put_item(Item={
@@ -78,6 +81,8 @@ class DynamoDBConnector:
         return response
 
     def insert_file_in_catalog(self, file_index, file_path):
+        """Insert the newly created file informations into the catalog table.
+        """
         try:
             table = self.dynamodb.Table('scraper_catalog')
         except ClientError as e:
@@ -86,8 +91,9 @@ class DynamoDBConnector:
         return table
 
     def is_scraped(self, file_hash):
+        """Check wether or not a document has already been scraped by looking
+        for its file hash into the article table."""
         try:
-            self.logger.info('Fetch scraped items...')
             table = self.dynamodb.Table('scraper_articles')
             item = table.get_item(
                 TableName='scraper_articles',
@@ -96,7 +102,6 @@ class DynamoDBConnector:
                 },
                 ConsistentRead=True,
             )
-            self.logger.info('Scraped item: [%s]', 'Item' in item.keys())
         except ClientError as e:
             self.logger.error('Couldn\'t fetch article [%s]', e)
             return False
