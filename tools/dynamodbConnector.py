@@ -1,5 +1,6 @@
 import boto3
 import logging
+from datetime import datetime
 from botocore.exceptions import ClientError
 
 
@@ -85,10 +86,15 @@ class DynamoDBConnector:
         """
         try:
             table = self.dynamodb.Table('scraper_catalog')
+            response = table.put_item(Item={
+                'file_index': file_index,
+                'file_path': file_path,
+                'date_created': datetime.now()
+            })
         except ClientError as e:
             self.logger.error('Couldn\'t insert file in the catalog [%s]', e)
             return
-        return table
+        return response
 
     def is_scraped(self, file_hash):
         """Check wether or not a document has already been scraped by looking
