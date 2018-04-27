@@ -17,13 +17,13 @@ ITEM_PIPELINES = {
     'wsf_scraping.pipelines.WsfScrapingPipeline': 10,
 }
 FEED_STORAGES = {
-    'dsx': 'tools.DSXFeedStorage',
+    'aws': 'tools.AWSFeedStorage',
 }
 
 # LOG_ENABLED = False
 LOG_LEVEL = 'INFO'
 LOG_FORMATTER = 'wsf_scraping.middlewares.PoliteLogFormatter'
-LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
+# LOG_FILE = 'var/log-{log_level}.txt'.format(log_level=LOG_LEVEL)
 # Set pdfminer log to WARNING
 logging.getLogger("pdfminer").setLevel(logging.WARNING)
 DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
@@ -79,13 +79,11 @@ FEED_FORMAT = 'jsonlines'
 FEED_EXPORT_ENCODING = 'utf-8'
 FEED_TEMPDIR = 'var/tmp/'
 
-if FEED_CONFIG == 'S3':
-    AWS_ACCESS_KEY_ID = ''
-    AWS_SECRET_ACCESS_KEY = ''
-    AWS_S3_BUCKET = 'wsf_scraper_results'
-    AWS_S3_FILE_NAME = '%(name)s - %(time)s.json'
+if FEED_CONFIG == 'AWS':
+    AWS_S3_BUCKET = 'data-labs'
+    AWS_S3_FILE_NAME = 'scraper-results/%(name)s - %(time)s.json'
     DATABASE_ADAPTOR = 'dynamodb'
-    FEED_URI = f's3://{AWS_S3_BUCKET}/{AWS_S3_FILE_NAME}'
+    FEED_URI = f'aws://{AWS_S3_BUCKET}/{AWS_S3_FILE_NAME}'
 
 else:
     # By default, log the results in a local folder
