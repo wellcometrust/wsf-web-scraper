@@ -1,6 +1,6 @@
 import boto3
 import logging
-from tools import DynamoDBConnector
+from .dynamodbConnector import DynamoDBConnector
 from scrapy.extensions.feedexport import BlockingFeedStorage
 from botocore.exceptions import ClientError
 
