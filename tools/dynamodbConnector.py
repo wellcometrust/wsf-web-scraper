@@ -20,50 +20,12 @@ class DynamoDBConnector:
             endpoint_url='http://localhost:8765'
         )
         try:
-            if 'scraper_articles' not in self.dynamodb.list_tables():
-                self.__create_articles_table()
+            if 'scraper_articles' not in self.dynamodb.tables.all():
+                self.logger.error('Article table does not exists.')
         except ClientError as e:
             self.logger.error(
                 'Error when initialising the connection [%s]', e
             )
-
-    def __create_articles_table(self):
-        """Create the table to store web crawler information about
-        already scraped articles (file hash and url).
-        """
-        table = self.dynamodb.create_table(
-            TableName='scraper_articles',
-            KeySchema=[
-                {'AttributeName': 'file_hash', 'KeyType': 'HASH'},
-            ],
-            AttributeDefinitions=[
-                {'AttributeName': 'file_hash', 'AttributeType': 'S'},
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 1,
-                'WriteCapacityUnits': 1
-            }
-        )
-        return table
-
-    def __create_catalog_table(self):
-        """Create the table to store scraping results s3 path,
-        timestamp and index.
-        """
-        table = self.dynamodb.create_table(
-            TableName='scraper_catalog',
-            KeySchema=[
-                {'AttributeName': 'file_index', 'KeyType': 'HASH'},
-            ],
-            AttributeDefinitions=[
-                {'AttributeName': 'file_index', 'AttributeType': 'S'},
-            ],
-            ProvisionedThroughput={
-                'ReadCapacityUnits': 1,
-                'WriteCapacityUnits': 1
-            }
-        )
-        return table
 
     def insert_article(self, file_hash, url):
         """Try to insert an article and its url in the article table. Return
