@@ -10,9 +10,7 @@ class DynamoDBConnector:
     """
 
     def __init__(self):
-        """Initialise the connection, try to create the tables if they don't
-        exist yet. Create a logger instance as well.
-        """
+        """Initialise the connection, and create a logger instance."""
         self.logger = logging.getLogger(__name__)
         self.dynamodb = boto3.resource(
             'dynamodb',
