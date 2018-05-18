@@ -31,10 +31,8 @@ COPY ./scrapy.cfg /wsf_scraper/scrapy.cfg
 COPY ./requirements-periodic-scraping.txt /wsf_scraper/requirements.txt
 
 # Scrapy needs a var directory to store logs
-RUN mkdir var
-
+RUN mkdir -p var/tmp
+RUN pip install -U pip
 RUN pip install -r requirements.txt
-
-EXPOSE 5005
 
 CMD ["./entrypoint.sh"]
