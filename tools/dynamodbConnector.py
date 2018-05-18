@@ -14,8 +14,6 @@ class DynamoDBConnector:
         self.logger = logging.getLogger(__name__)
         self.dynamodb = boto3.resource(
             'dynamodb',
-            region_name='eu-west-2',
-            endpoint_url='http://localhost:8765'
         )
         try:
             if 'scraper_articles' not in self.dynamodb.tables.all():
@@ -49,7 +47,7 @@ class DynamoDBConnector:
             response = table.put_item(Item={
                 'file_index': file_index,
                 'file_path': file_path,
-                'date_created': datetime.now()
+                'date_created': str(datetime.now())
             })
         except ClientError as e:
             self.logger.error('Couldn\'t insert file in the catalog [%s]', e)

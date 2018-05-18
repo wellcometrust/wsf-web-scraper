@@ -1,5 +1,6 @@
 import boto3
 import logging
+from six.moves.urllib.parse import urlparse
 from .dynamodbConnector import DynamoDBConnector
 from scrapy.extensions.feedexport import BlockingFeedStorage
 from botocore.exceptions import ClientError
@@ -17,18 +18,23 @@ class AWSFeedStorage(BlockingFeedStorage):
 
         self.logger = logging.getLogger(__name__)
 
+        u = urlparse(uri)
+        self.s3_file = u.path[1:]
         self.s3_bucket = settings['AWS_S3_BUCKET']
-        self.s3_file = settings['AWS_S3_FILE_NAME']
-        self.s3 = boto3.resource('s3')
+        self.s3 = boto3.client('s3')
         self.dynamodb = DynamoDBConnector()
 
     def _store_in_thread(self, data_file):
         """This method will try to upload the file to S3, then to insert the
         file's related information into DynamoDB.
         """
+        data_file.seek(0)
         try:
-            with open(data_file, 'rb') as f:
-                self.s3.upload_fileobj(f, self.s3_bucket, self.s3_file)
+            self.s3.put_object(
+                Body=data_file,
+                Bucket=self.s3_bucket,
+                Key=self.s3_file
+            )
         except ClientError as e:
             self.logger.error('Couldn\'t upload the json file to s3: %s', e)
         else:
