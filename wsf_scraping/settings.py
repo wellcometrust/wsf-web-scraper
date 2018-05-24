@@ -81,7 +81,7 @@ FEED_TEMPDIR = 'var/tmp/'
 
 if FEED_CONFIG == 'AWS':
     AWS_S3_BUCKET = 'data-labs-data'
-    AWS_S3_FILE_NAME = 'scraper-results/%(name)s - %(time)s.json'
+    AWS_S3_FILE_NAME = 'scraper-results/%(name)s'
     DATABASE_ADAPTOR = 'dynamodb'
     FEED_URI = 'aws://{bucket}/{filename}'.format(
         bucket=AWS_S3_BUCKET,

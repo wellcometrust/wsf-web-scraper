@@ -12,11 +12,12 @@ class DynamoDBConnector:
     def __init__(self):
         """Initialise the connection, and create a logger instance."""
         self.logger = logging.getLogger(__name__)
-        self.dynamodb = boto3.resource(
+        self.dynamodb = boto3.client(
             'dynamodb',
         )
         try:
-            if 'scraper_articles' not in self.dynamodb.tables.all():
+            tables = self.dynamodb.list_tables().get('TableNames')
+            if 'scraper_articles' not in tables:
                 self.logger.error('Article table does not exists.')
         except ClientError as e:
             self.logger.error(
@@ -28,11 +29,13 @@ class DynamoDBConnector:
         dynamodb response or `None` if the request fail.
         """
         try:
-            table = self.dynamodb.Table("scraper_articles")
-            response = table.put_item(Item={
-                'file_hash': file_hash,
-                'url': url
-            })
+            response = self.dynamodb.put_item(
+                TableName='scraper_articles',
+                Item={
+                    'file_hash': {'S': file_hash},
+                    'url': {'S': url}
+                }
+            )
         except ClientError as e:
             self.logger.error('Couldn\'t insert article [%s]', e)
             return
@@ -43,12 +46,14 @@ class DynamoDBConnector:
         """Insert the newly created file informations into the catalog table.
         """
         try:
-            table = self.dynamodb.Table('scraper_catalog')
-            response = table.put_item(Item={
-                'file_index': file_index,
-                'file_path': file_path,
-                'date_created': str(datetime.now())
-            })
+            response = self.dynamodb.put_item(
+                TableName='scraper_catalog',
+                Item={
+                    'file_index': {'S': file_index},
+                    'file_path': {'S': file_path},
+                    'date_created': {'S': str(datetime.now())}
+                }
+            )
         except ClientError as e:
             self.logger.error('Couldn\'t insert file in the catalog [%s]', e)
             return
@@ -58,11 +63,10 @@ class DynamoDBConnector:
         """Check wether or not a document has already been scraped by looking
         for its file hash into the article table."""
         try:
-            table = self.dynamodb.Table('scraper_articles')
-            item = table.get_item(
+            item = self.dynamodb.get_item(
                 TableName='scraper_articles',
                 Key={
-                    'file_hash': file_hash,
+                    'file_hash': {'S': file_hash},
                 },
                 ConsistentRead=True,
             )

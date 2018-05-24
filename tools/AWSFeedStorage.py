@@ -1,5 +1,6 @@
 import boto3
 import logging
+from datetime import datetime
 from six.moves.urllib.parse import urlparse
 from .dynamodbConnector import DynamoDBConnector
 from scrapy.extensions.feedexport import BlockingFeedStorage
@@ -24,21 +25,56 @@ class AWSFeedStorage(BlockingFeedStorage):
         self.s3 = boto3.client('s3')
         self.dynamodb = DynamoDBConnector()
 
+    def _generate_datetag(self):
+        curdate = datetime.now()
+        return "{year}{month}{day}".format(
+            year=curdate.year,
+            month=curdate.month,
+            day=curdate.day,
+        )
+
+    def _get_last_result(self):
+        try:
+            objs = self.s3.list_objects_v2(
+                Bucket=self.s3_bucket,
+                Prefix=self.s3_file
+            ).get('Contents')
+            last_added = [obj['Key'] for obj in sorted(
+                objs,
+                key=lambda obj: int(obj['LastModified'].strftime('%s'))
+            )][0]
+            last_file = self.s3.get_object(
+                Bucket=self.s3_bucket,
+                Key=last_added
+            )
+            last_content = last_file.get('Body').read()
+        except ClientError:
+            self.logger.warning('No records of last week results')
+            return ''
+
+        return last_content.decode()
+
     def _store_in_thread(self, data_file):
         """This method will try to upload the file to S3, then to insert the
         file's related information into DynamoDB.
         """
         data_file.seek(0)
         try:
+            last_content = self._get_last_result()
+            content = last_content + data_file.read().decode()
+            filename = "{folders}/{file_datetag}.json".format(
+                folders=self.s3_file,
+                file_datetag=self._generate_datetag()
+            )
             self.s3.put_object(
-                Body=data_file,
+                Body=content,
                 Bucket=self.s3_bucket,
-                Key=self.s3_file
+                Key=filename
             )
         except ClientError as e:
             self.logger.error('Couldn\'t upload the json file to s3: %s', e)
         else:
             self.dynamodb.insert_file_in_catalog(
-                self.s3_file,
-                f'{self.s3_bucket}/{self.s3_file}',
+                filename,
+                f'{self.s3_bucket}/{self.s3_file}/{filename}',
             )
