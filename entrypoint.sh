@@ -10,7 +10,7 @@ elif [ "$SPIDER_TO_RUN" == 'nice' ]
 then
     scrapy crawl nice
 else
-    echo "Either you did not specified a spider, or the spider you want to run does not exists."
+    echo "Either you did not specifiy a spider, or the spider you want to run does not exist."
     exit 1
 fi
 exit 0
