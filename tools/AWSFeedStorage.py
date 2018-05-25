@@ -27,32 +27,33 @@ class AWSFeedStorage(BlockingFeedStorage):
 
     def _generate_datetag(self):
         curdate = datetime.now()
-        return "{year}{month}{day}".format(
-            year=curdate.year,
-            month=curdate.month,
-            day=curdate.day,
-        )
+        return "{}".format(curdate.strftime('%Y%m%d'))
 
     def _get_last_result(self):
         try:
             objs = self.s3.list_objects_v2(
                 Bucket=self.s3_bucket,
                 Prefix=self.s3_file
-            ).get('Contents')
-            last_added = [obj['Key'] for obj in sorted(
-                objs,
-                key=lambda obj: int(obj['LastModified'].strftime('%s'))
-            )][0]
-            last_file = self.s3.get_object(
-                Bucket=self.s3_bucket,
-                Key=last_added
-            )
-            last_content = last_file.get('Body').read()
+            ).get('Contents', [])
         except ClientError:
-            self.logger.warning('No records of last week results')
+            self.logger.warning('Could not connect to s3 bucket.')
             return ''
 
-        return last_content.decode()
+        if not objs:
+            self.logger.warning('Could not get last result file.')
+            return ''
+
+        last_added = [obj['Key'] for obj in sorted(
+            objs,
+            key=lambda obj: obj['LastModified']
+        )][0]
+        last_file = self.s3.get_object(
+            Bucket=self.s3_bucket,
+            Key=last_added
+        )
+        last_content = last_file.get('Body').read()
+
+        return last_content.decode('utf-8', 'replace')
 
     def _store_in_thread(self, data_file):
         """This method will try to upload the file to S3, then to insert the

@@ -17,19 +17,20 @@ class DynamoDBConnector:
         )
         try:
             tables = self.dynamodb.list_tables().get('TableNames')
-            if 'scraper_articles' not in tables:
-                self.logger.error('Article table does not exists.')
         except ClientError as e:
             self.logger.error(
                 'Error when initialising the connection [%s]', e
             )
+        else:
+            if 'scraper_articles' not in tables:
+                self.logger.error('Article table does not exists.')
 
     def insert_article(self, file_hash, url):
         """Try to insert an article and its url in the article table. Return
         dynamodb response or `None` if the request fail.
         """
         try:
-            response = self.dynamodb.put_item(
+            return self.dynamodb.put_item(
                 TableName='scraper_articles',
                 Item={
                     'file_hash': {'S': file_hash},
@@ -38,15 +39,12 @@ class DynamoDBConnector:
             )
         except ClientError as e:
             self.logger.error('Couldn\'t insert article [%s]', e)
-            return
-
-        return response
 
     def insert_file_in_catalog(self, file_index, file_path):
         """Insert the newly created file informations into the catalog table.
         """
         try:
-            response = self.dynamodb.put_item(
+            return self.dynamodb.put_item(
                 TableName='scraper_catalog',
                 Item={
                     'file_index': {'S': file_index},
@@ -56,8 +54,6 @@ class DynamoDBConnector:
             )
         except ClientError as e:
             self.logger.error('Couldn\'t insert file in the catalog [%s]', e)
-            return
-        return response
 
     def is_scraped(self, file_hash):
         """Check wether or not a document has already been scraped by looking
@@ -70,7 +66,7 @@ class DynamoDBConnector:
                 },
                 ConsistentRead=True,
             )
+            return 'Item' in item.keys()
         except ClientError as e:
             self.logger.error('Couldn\'t fetch article [%s]', e)
             return False
-        return 'Item' in item.keys()
