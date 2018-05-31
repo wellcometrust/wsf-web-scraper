@@ -25,10 +25,6 @@ class AWSFeedStorage(BlockingFeedStorage):
         self.s3 = boto3.client('s3')
         self.dynamodb = DynamoDBConnector()
 
-    def _generate_datetag(self):
-        curdate = datetime.now()
-        return "{}".format(curdate.strftime('%Y%m%d'))
-
     def _get_last_result(self):
         try:
             objs = self.s3.list_objects_v2(
@@ -60,12 +56,13 @@ class AWSFeedStorage(BlockingFeedStorage):
         file's related information into DynamoDB.
         """
         data_file.seek(0)
+        date_tag = datetime.now().strftime('%Y%m%d')
         try:
             last_content = self._get_last_result()
             content = last_content + data_file.read().decode()
             filename = "{folders}/{file_datetag}.json".format(
                 folders=self.s3_file,
-                file_datetag=self._generate_datetag()
+                file_datetag=date_tag
             )
             self.s3.put_object(
                 Body=content,
@@ -77,5 +74,5 @@ class AWSFeedStorage(BlockingFeedStorage):
         else:
             self.dynamodb.insert_file_in_catalog(
                 filename,
-                f'{self.s3_bucket}/{self.s3_file}/{filename}',
+                '/'.join([self.s3_bucket, self.s3_file, filename]),
             )

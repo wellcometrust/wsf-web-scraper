@@ -3,14 +3,7 @@
 set -o nounset
 set -o errexit
 
-if [ "$SPIDER_TO_RUN" == 'who_iris' ]
-then
-    scrapy crawl who_iris
-elif [ "$SPIDER_TO_RUN" == 'nice' ]
-then
-    scrapy crawl nice
-else
-    echo "Either you did not specifiy a spider, or the spider you want to run does not exist."
-    exit 1
-fi
+echo "Running $SPIDER_TO_RUN spider."
+scrapy crawl "$SPIDER_TO_RUN"
+
 exit 0
