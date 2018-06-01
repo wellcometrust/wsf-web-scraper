@@ -106,7 +106,7 @@ class UnicefSpider(scrapy.Spider):
         with open('/tmp/' + filename, 'wb') as f:
             f.write(response.body)
 
-        # Populate a WHOArticle Item
+        # Populate a UNICEFArticle Item
         unicef_article = UNICEFArticle({
                 'title': response.meta.get('title', ''),
                 'uri': response.request.url,
