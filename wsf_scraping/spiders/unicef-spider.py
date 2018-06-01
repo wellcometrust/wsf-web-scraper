@@ -78,7 +78,7 @@ class UnicefSpider(scrapy.Spider):
         @returns items 0 0
         """
 
-        title = response.css('.entry-heading h1').extract_first()
+        title = response.css('.entry-heading h1::text').extract_first()
         hrefs = response.css('a::attr("href")').extract()
         ls = list(filter(lambda x: x.endswith('pdf'), hrefs))
         for link in ls:
