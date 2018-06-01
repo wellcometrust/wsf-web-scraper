@@ -78,6 +78,7 @@ class UnicefSpider(scrapy.Spider):
         @returns items 0 0
         """
 
+        title = response.css('.entry-heading h1').extract_first()
         hrefs = response.css('a::attr("href")').extract()
         ls = list(filter(lambda x: x.endswith('pdf'), hrefs))
         for link in ls:
@@ -85,6 +86,7 @@ class UnicefSpider(scrapy.Spider):
                 url=response.urljoin(link),
                 callback=self.save_pdf,
                 errback=self.on_error,
+                meta={'title': title}
             )
 
     def save_pdf(self, response):
@@ -102,8 +104,6 @@ class UnicefSpider(scrapy.Spider):
             self.logger.info('Not a PDF, aborting (%s)', response.url)
             return
 
-        # Retrieve metadata
-        data_dict = response.meta.get('data_dict', {})
         # Download PDF file to /tmp
         filename = urlparse(response.url).path.split('/')[-1]
         with open('/tmp/' + filename, 'wb') as f:
@@ -111,7 +111,7 @@ class UnicefSpider(scrapy.Spider):
 
         # Populate a WHOArticle Item
         unicef_article = UNICEFArticle({
-                'title': data_dict.get('title', ''),
+                'title': response.meta.get('title', ''),
                 'uri': response.request.url,
                 'pdf': filename,
                 'sections': {},
