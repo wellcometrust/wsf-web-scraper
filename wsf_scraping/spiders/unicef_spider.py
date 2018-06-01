@@ -9,9 +9,6 @@ from twisted.internet.error import TimeoutError
 
 class UnicefSpider(scrapy.Spider):
     name = 'unicef'
-    # All these parameters are optionnal,
-    # but it is good to set a result per page ubove 250, to limit query number
-    data = {}
 
     custom_settings = {
         'JOBDIR': 'crawls/unicef'
@@ -57,9 +54,9 @@ class UnicefSpider(scrapy.Spider):
     def parse(self, response):
         """ Parse the articles listing page and go to the next one.
 
-        @url http://apps.who.int/iris/discover?rpp=3
+        @url https://data.unicef.org/resources/resource-type/publication/
         @returns items 0 0
-        @returns requests 3 4
+        @returns requests 115
         """
 
         for href in response.css('h2 a::attr(href)').extract():
@@ -73,7 +70,7 @@ class UnicefSpider(scrapy.Spider):
         """ Scrape the article metadata from the detailed article page. Then,
         redirect to the PDF page.
 
-        @url http://apps.who.int/iris/handle/10665/272346?show=full
+        @url https://data.unicef.org/resources/child-protection-resource-pack/
         @returns requests 1 1
         @returns items 0 0
         """
@@ -92,7 +89,7 @@ class UnicefSpider(scrapy.Spider):
     def save_pdf(self, response):
         """ Retrieve the pdf file and scan it to scrape keywords and sections.
 
-        @url http://apps.who.int/iris/bitstream/10665/123575/1/em_rc8_5_en.pdf
+        @url https://data.unicef.org/wp-content/uploads/2016/04/CPR-WEB.pdf
         @returns items 1 1
         @returns requests 0 0
         """
