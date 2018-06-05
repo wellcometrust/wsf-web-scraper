@@ -2,36 +2,15 @@ import scrapy
 from urllib.parse import urlparse
 from scrapy.http import Request
 from wsf_scraping.items import UNICEFArticle
-from scrapy.spidermiddlewares.httperror import HttpError
-from twisted.internet.error import DNSLookupError
-from twisted.internet.error import TimeoutError
+from .base_spider import BaseSpider
 
 
-class UnicefSpider(scrapy.Spider):
+class UnicefSpider(BaseSpider):
     name = 'unicef'
 
     custom_settings = {
         'JOBDIR': 'crawls/unicef'
     }
-
-    def on_error(self, failure):
-        self.logger.error(repr(failure))
-
-        if failure.check(HttpError):
-            response = failure.value.response
-            self.logger.error(
-                'HttpError on %s (%s)',
-                response.url,
-                response.status,
-            )
-
-        elif failure.check(DNSLookupError):
-            request = failure.request
-            self.logger.error('DNSLookupError on %s', request.url)
-
-        elif failure.check(TimeoutError):
-            request = failure.request
-            self.logger.error('TimeoutError on %s', request.url)
 
     def start_requests(self):
         """ This sets up the urls to scrape for each years.
@@ -94,8 +73,7 @@ class UnicefSpider(scrapy.Spider):
         @returns requests 0 0
         """
 
-        content_type = response.headers.get('content-type', '').split(b';')[0]
-        is_pdf = b'application/pdf' == content_type
+        is_pdf = self._check_headers(response.headers)
 
         if not is_pdf:
             self.logger.info('Not a PDF, aborting (%s)', response.url)
