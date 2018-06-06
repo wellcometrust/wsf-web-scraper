@@ -20,3 +20,7 @@ class WHOArticle(BaseArticle):
 
 class NICEArticle(BaseArticle):
     year = scrapy.Field()
+
+
+class UNICEFArticle(BaseArticle):
+    pass
