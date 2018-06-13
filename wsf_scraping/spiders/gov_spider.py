@@ -29,7 +29,7 @@ class GovSpider(BaseSpider):
     def parse(self, response):
         """ Parse the articles listing page and go to the next one.
 
-        @url https://www.gov.uk/government/policies
+        @url https://www.gov.uk/government/publications
         @returns items 0 0
         @returns requests 1
         """
@@ -68,6 +68,8 @@ class GovSpider(BaseSpider):
             )
 
     def save_pdf(self, response):
+        """ Retrieve the pdf file and scan it to scrape keywords and sections.
+        """
         is_pdf = self._check_headers(response.headers)
 
         if not is_pdf:
