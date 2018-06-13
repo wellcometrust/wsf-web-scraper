@@ -14,7 +14,7 @@ class GovSpider(BaseSpider):
     def start_requests(self):
         """ This sets up the urls to scrape for each years."""
         urls = [
-            'https://www.gov.uk/government/policies',
+            'https://www.gov.uk/government/publications',
         ]
 
         for url in urls:
@@ -38,7 +38,7 @@ class GovSpider(BaseSpider):
             '.attachment-details .title a::attr("href")'
         ).extract()
         other_document_links = response.css(
-            'li.document a::attr("href")'
+            'li.document-row a::attr("href")'
         ).extract()
 
         for href in other_document_links:
@@ -49,14 +49,16 @@ class GovSpider(BaseSpider):
             )
 
         for fhref in file_links:
+            title = response.css('h1::text').extract_first().strip('\n ')
             yield Request(
                 url=response.urljoin(fhref),
                 callback=self.save_pdf,
-                errback=self.on_error
+                errback=self.on_error,
+                meta={'title': title}
             )
 
         next_page = response.css(
-            '.pub-c-pagination__item--next a::attr("href")'
+            'li.next a::attr("href")'
         ).extract_first()
         if next_page:
             yield Request(
@@ -86,7 +88,7 @@ class GovSpider(BaseSpider):
                 f.write(response.body)
             # Populate a WHOArticle Item
             gov_article = GovArticle({
-                    'title': '',
+                    'title': response.meta.get('title', ''),
                     'uri': response.request.url,
                     'pdf': filename,
                     'sections': {},
