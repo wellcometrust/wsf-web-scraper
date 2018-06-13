@@ -28,10 +28,11 @@ def parse_pdf_document(document):
         with open(os.devnull, 'w') as FNULL:
             subprocess.check_call(cmd, stdout=FNULL)
     except subprocess.CalledProcessError as e:
+        err = e.sdterr if e.stderr else ''
         logger.warning(
             "The pdf [%s] could not be converted: %s",
             document.name,
-            e.sdterr,
+            err,
         )
         return None
 
