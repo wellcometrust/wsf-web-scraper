@@ -6,4 +6,40 @@ A web scraper tool to get data for evaluating Wellcome impact.
 
 ## Usage
 
-See the wiki: https://github.com/wellcometrust/wsf-web-scraper/wiki
+To deploy this scraper yourself, see the wiki: https://github.com/wellcometrust/wsf-web-scraper/wiki
+
+This scraper can also be deployed more easily using Docker.
+
+## Output Formating
+
+The outputed file is meant to contains a number a different fields, which can vary depending on the scraped provider.
+
+It will always have the following attribute, thought:
+
+```
+title: a string containing the document title
+uri: the url of the document
+pdf: the name of the file
+sections: a json object of section names, containing the text extracted from matching sections
+keywords: a json object of keywords, containing the text extracted from matching text
+hash: a md5 digest of the file
+provider: the provider from where the file has been downloaded
+```
+
+Some providers will have additional parameters:
+
+- WHO:
+
+```
+year: the publication year of the document
+types: an array containing the who type associated with the document
+subjects: an array containing the who subjects of the document
+```
+
+- Nice
+
+```
+year: the publication year of the document
+```
+
+
