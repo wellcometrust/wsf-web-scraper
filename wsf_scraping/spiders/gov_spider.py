@@ -2,7 +2,7 @@ import scrapy
 from urllib.parse import urlparse
 from scrapy.http import Request
 from .base_spider import BaseSpider
-from wsf_scraping.items import UNICEFArticle
+from wsf_scraping.items import GovArticle
 
 
 class GovSpider(BaseSpider):
@@ -48,21 +48,12 @@ class GovSpider(BaseSpider):
                 errback=self.on_error,
             )
 
-        for href in file_links:
-            if response.headers.get(
-                'content-type', ''
-            ).split(b';')[0] != b'text/html':
-                return Request(
-                    url=response.urljoin(href),
-                    callback=self.save_pdf,
-                    errback=self.on_error
-                )
-            else:
-                yield Request(
-                    url=response.urljoin(href),
-                    callback=self.parse,
-                    errback=self.on_error,
-                )
+        for fhref in file_links:
+            yield Request(
+                url=response.urljoin(fhref),
+                callback=self.save_pdf,
+                errback=self.on_error
+            )
 
         next_page = response.css(
             '.pub-c-pagination__item--next a::attr("href")'
@@ -75,35 +66,32 @@ class GovSpider(BaseSpider):
             )
 
     def save_pdf(self, response):
-        """ Retrieve the pdf file and scan it to scrape keywords and sections.
-
-        @url http://apps.who.int/iris/bitstream/10665/123575/1/em_rc8_5_en.pdf
-        @returns items 1 1
-        @returns requests 0 0
-        """
-
-        self.logger.info("1")
-
         is_pdf = self._check_headers(response.headers)
 
         if not is_pdf:
-            self.logger.info('Not a PDF, aborting (%s)', response.url)
-            return
+            if self._check_headers(response.headers, b'text/html'):
+                yield Request(
+                    url=response.request.url,
+                    callback=self.parse,
+                    errback=self.on_error,
+                )
+            else:
+                self.logger.info('Not a PDF, aborting (%s)', response.url)
+                return
 
-        self.logger.info("2")
         # Download PDF file to /tmp
         filename = urlparse(response.url).path.split('/')[-1]
-        with open('/tmp/' + filename, 'wb') as f:
-            f.write(response.body)
-            self.logger.info('Writing file to the hard drive.')
-        # Populate a WHOArticle Item
-        who_article = UNICEFArticle({
-                'title': '',
-                'uri': response.request.url,
-                'pdf': filename,
-                'sections': {},
-                'keywords': {}
-            }
-        )
+        if filename:
+            with open('/tmp/' + filename, 'wb') as f:
+                f.write(response.body)
+            # Populate a WHOArticle Item
+            gov_article = GovArticle({
+                    'title': '',
+                    'uri': response.request.url,
+                    'pdf': filename,
+                    'sections': {},
+                    'keywords': {}
+                }
+            )
 
-        yield who_article
+            yield gov_article
