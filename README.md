@@ -16,30 +16,29 @@ The outputed file is meant to contains a number a different fields, which can va
 
 It will always have the following attribute, thought:
 
-```
-title: a string containing the document title
-uri: the url of the document
-pdf: the name of the file
-sections: a json object of section names, containing the text extracted from matching sections
-keywords: a json object of keywords, containing the text extracted from matching text
-hash: a md5 digest of the file
-provider: the provider from where the file has been downloaded
-```
+|Attribute|Description|
+|---------|-----------|
+|title    | a string containing the document title|
+|uri      | the url of the document|
+|pdf      | the name of the file|
+|sections | a json object of section names, containing the text extracted from matching sections|
+|keywords | a json object of keywords, containing the text extracted from matching text|
+|hash     | a md5 digest of the file|
+|provider | the provider from where the file has been downloaded|
 
 Some providers will have additional parameters:
 
-- WHO:
+### WHO
 
-```
-year: the publication year of the document
-types: an array containing the who type associated with the document
-subjects: an array containing the who subjects of the document
-```
+|Attribute|Description|
+|---------|-----------|
+|year     | the publication year of the document|
+|types    | an array containing the who type associated with the document|
+|subjects | an array containing the who subjects of the document|
+|authors  | an array containing the authors (from WHO)|
 
-- Nice
+### Nice
 
-```
-year: the publication year of the document
-```
-
-
+|Attribute|Description|
+|---------|-----------|
+|year     | the publication year of the document|
