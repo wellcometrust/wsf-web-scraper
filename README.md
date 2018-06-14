@@ -12,9 +12,9 @@ This scraper can also be deployed more easily using Docker.
 
 ## Output Formating
 
-The outputed file is meant to contains a number a different fields, which can vary depending on the scraped provider.
+The outputed file is meant to contain a number a different fields, which can vary depending on the scraper provider.
 
-It will always have the following attribute, thought:
+It will always have the following attributes, though:
 
 |Attribute|Description|
 |---------|-----------|
@@ -33,8 +33,8 @@ Some providers will have additional parameters:
 |Attribute|Description|
 |---------|-----------|
 |year     | the publication year of the document|
-|types    | an array containing the who type associated with the document|
-|subjects | an array containing the who subjects of the document|
+|types    | an array containing the WHO type associated with the document|
+|subjects | an array containing the WHO subjects of the document|
 |authors  | an array containing the authors (from WHO)|
 
 ### Nice
