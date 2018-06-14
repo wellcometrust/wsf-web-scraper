@@ -16,6 +16,7 @@ def parse_pdf_document(document):
 
     logger = logging.getLogger(__name__)
     parsed_path = document.name.replace('.pdf', '.xml')
+    # Run pdftohtml on the document, and output an xml formated document
     cmd = [
             'pdftohtml',
             '-i',
