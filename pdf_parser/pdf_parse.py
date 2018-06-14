@@ -19,6 +19,7 @@ def parse_pdf_document(document):
     cmd = [
             'pdftohtml',
             '-i',
+            '-q',
             '-xml',
             document.name,
             parsed_path
@@ -28,11 +29,10 @@ def parse_pdf_document(document):
         with open(os.devnull, 'w') as FNULL:
             subprocess.check_call(cmd, stdout=FNULL)
     except subprocess.CalledProcessError as e:
-        err = e.sdterr if e.stderr else ''
         logger.warning(
-            "The pdf [%s] could not be converted: %s",
+            "The pdf [%s] could not be converted: %r",
             document.name,
-            err,
+            e.stderr,
         )
         return None
 

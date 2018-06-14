@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import tempfile
 import logging
 from scrapy import spiderloader
 from tools import DatabaseConnector, DynamoDBConnector
@@ -32,7 +33,12 @@ class WsfScrapingPipeline(object):
         spiders = spider_loader.list()
 
         for spider_name in spiders:
-            folder_path = os.path.join('./', 'results', 'pdfs', spider_name)
+            folder_path = os.path.join(
+                os.path.curdir,
+                'results',
+                'pdfs',
+                spider_name
+            )
             os.makedirs(folder_path, exist_ok=True)
 
         if self.settings['DATABASE_ADAPTOR'] == 'dynamodb':
@@ -64,8 +70,8 @@ class WsfScrapingPipeline(object):
         with open(base_pdf_path, 'rb') as f:
             if download_only:
                 os.rename(
-                    ''.join(['/tmp/', item['pdf']]),
-                    ''.join([pdf_result_path, item['pdf']])
+                    os.path.join(tempfile.gettempdir(), item['pdf']),
+                    os.path.join(pdf_result_path, item['pdf'])
                 )
                 return item
 
@@ -107,7 +113,7 @@ class WsfScrapingPipeline(object):
                 pass
             else:
                 os.rename(
-                    os.path.join('/tmp', item['pdf']),
+                    os.path.join(tempfile.gettempdir(), item['pdf']),
                     os.path.join(pdf_result_path, item['pdf'])
                 )
         else:
@@ -122,12 +128,16 @@ class WsfScrapingPipeline(object):
     def process_item(self, item, spider):
         """Process items sent by the spider."""
 
-        base_pdf_path = os.path.join('/tmp', item['pdf'])
+        base_pdf_path = os.path.join(tempfile.gettempdir(), item['pdf'])
         file_hash = get_file_hash(base_pdf_path)
         if self.database.is_scraped(file_hash):
             # File is already scraped in the database
             raise DropItem(
                 'Item footprint is already in the database'
+            )
+        if not item['pdf']:
+            raise DropItem(
+                'Empty filename, could not parse the pdf.'
             )
         full_item = self.check_keywords(item, spider.name, base_pdf_path)
         full_item['hash'] = file_hash
