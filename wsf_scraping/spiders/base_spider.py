@@ -34,14 +34,15 @@ class BaseSpider(scrapy.Spider):
         return desired_extension == content_type
 
     def _save_file(self, url, response_body):
-        filename = os.path.basename(urlparse(url).path).lower()
+        filename = os.path.basename(urlparse(url).path)
+        tempdir = tempfile.mkdtemp()
         if filename:
-            if not filename.endswith('.pdf'):
+            if not filename.lower().endswith('.pdf'):
                 filename = filename + '.pdf'
-            filepath = os.path.join(tempfile.gettempdir(), filename)
+            filepath = os.path.join(tempdir, filename)
             with open(filepath, 'wb') as f:
                 f.write(response_body)
-            return filename
+            return filepath
         else:
             self.logger.warning('Empty filename, could not save the file.')
             return ''
