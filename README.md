@@ -16,15 +16,15 @@ The outputed file is meant to contain a number a different fields, which can var
 
 It will always have the following attributes, though:
 
-|Attribute|Description|
-|---------|-----------|
-|title    | a string containing the document title|
-|uri      | the url of the document|
-|pdf      | the name of the file|
-|sections | a json object of section names, containing the text extracted from matching sections|
-|keywords | a json object of keywords, containing the text extracted from matching text|
-|hash     | a md5 digest of the file|
-|provider | the provider from where the file has been downloaded|
+|Unique|Attribute|Description|
+|------|---------|-----------|
+|      |title    | a string containing the document title|
+|*     |uri      | the url of the document|
+|      |pdf      | the name of the file|
+|      |sections | a json object of section names, containing the text extracted from matching sections|
+|      |keywords | a json object of keywords, containing the text extracted from matching text|
+|*     |hash     | a md5 digest of the file|
+|      |provider | the provider from where the file has been downloaded|
 
 Some providers will have additional parameters:
 
