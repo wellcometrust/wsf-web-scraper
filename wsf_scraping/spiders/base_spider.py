@@ -44,5 +44,8 @@ class BaseSpider(scrapy.Spider):
                 f.write(response_body)
             return filepath
         else:
-            self.logger.warning('Empty filename, could not save the file.')
+            self.logger.warning(
+                 'Empty filename, could not save the file. [Url: %s]',
+                 url
+            )
             return ''
