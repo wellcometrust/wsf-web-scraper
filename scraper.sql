@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS publication
     pub_year  VARCHAR(4),
     pdf_text TEXT,
     scrape_again BOOLEAN,
-    fk_provider_id INT REFERENCES "provider",
+    id_provider INT REFERENCES "provider",
     datetime_creation TIMESTAMP,
     datetime_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
