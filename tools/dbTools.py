@@ -125,11 +125,14 @@ class DatabaseConnector:
         """
         if limit > 0:
             self._execute(
-                "SELECT title, file_hash, url FROM article LIMIT %s OFFSET %s",
+                """
+                    SELECT title, file_hash, url
+                    FROM publication LIMIT %s OFFSET %s
+                """,
                 (offset, limit,)
             )
         else:
-            self._execute("SELECT title, file_hash, url FROM article")
+            self._execute("SELECT title, file_hash, url FROM publication")
         result = []
         for article in self.cursor.fetchall():
             result.append(article)
