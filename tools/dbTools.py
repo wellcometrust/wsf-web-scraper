@@ -170,16 +170,14 @@ class DatabaseConnector:
              article['text'], article['id'],)
         )
 
-    def insert_joints_and_text(self, table, data, id_article):
+    def insert_joints_and_text(self, table, items, id_article):
         """Create both a name table and a joint table between a publication and
-        another item with a 0-n or 1-n cardinality.
+        another item with a 0-n or 1-n cardinality, containing a text element.
         """
-        res = []
-        names = {}
-        items = data.get(f'{table}s', {})
+        if not items:
+            return
         for name, text_value in items.items():
             db_name_id = self.get_or_create_name(name, table)
-
             self._execute(
                 """
                     INSERT
@@ -192,16 +190,31 @@ class DatabaseConnector:
                 """.format(table=table),
                 (id_article, db_name_id, text_value,)
             )
-        res_names = []
-        for id, name in enumerate(names):
-            res_names.append({
-                'id': id,
-                'name': name,
-                'datetime_creation': datetime.now(),
-            })
-        return res, res_names
+
+    def insert_joints(self, table, items, id_article):
+        """Create both a name table and a joint table between a publication and
+        another item with a 0-n or 1-n cardinality.
+        """
+        if not items:
+            return
+        for name in items:
+            db_name_id = self.get_or_create_name(name, table)
+            self._execute(
+                """
+                    INSERT
+                    INTO publications_{table}s(
+                        id_publication,
+                        id_{table}
+                    )
+                    VALUES(%s, %s);
+                """.format(table=table),
+                (id_article, db_name_id,)
+            )
 
     def get_or_create_name(self, name, table):
+        """Insert a `name` like element in a table if it doesn't exists and
+        returns its ID. If it already exists, just returns the ID.
+        """
         self._execute(
             'SELECT id FROM {table} WHERE name = %s'.format(table=table),
             (name,)

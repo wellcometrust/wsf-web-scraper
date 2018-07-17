@@ -153,10 +153,27 @@ class WsfScrapingPipeline(object):
                 full_item,
                 id_provider
             )
-            self.database.insert_joints_and_text('section', full_item,
-                                                 id_publication)
-            self.database.insert_joints_and_text('keyword', full_item,
-                                                 id_publication)
+            self.database.insert_joints_and_text(
+                'section',
+                full_item.get('sections'),
+                id_publication
+            )
+            self.database.insert_joints_and_text(
+                'keyword',
+                full_item.get('keywords'),
+                id_publication
+            )
+            self.database.insert_joints(
+                'type',
+                full_item.get('types'),
+                id_publication
+            )
+            self.database.insert_joints(
+                'subjects',
+                full_item.get('types'),
+                id_publication
+            )
+
         self.database.insert_article(file_hash, item['uri'])
 
         return full_item
