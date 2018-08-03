@@ -14,8 +14,9 @@ class GovSpider(BaseSpider):
     }
 
     def __init__(self, **kwargs):
-        """Initialise the class attribute year before and year after. The
-        attribute year before exclude everything from said year.
+        """Initialise the class attribute year_before and year_after. The
+        attribute year_before excludes everything from said year.
+        e.g. 2013 and 2015 -> 01/01/2013 to 31/12/2014
         """
         year_before = kwargs.get('year_before', False)
         year_after = kwargs.get('year_after', False)
