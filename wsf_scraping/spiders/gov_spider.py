@@ -1,6 +1,8 @@
 import scrapy
-from scrapy.http import Request
+
 from .base_spider import BaseSpider
+
+from scrapy.http import Request
 from wsf_scraping.items import GovArticle
 from urllib.parse import urlencode
 
@@ -11,21 +13,14 @@ class GovSpider(BaseSpider):
         'JOBDIR': 'crawls/gov_uk'
     }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         year_before = kwargs.get('year_before', False)
         year_after = kwargs.get('year_after', False)
         id = kwargs.get('uuid', '')
 
         self.uuid = id
-        if year_before:
-            self.year_before = year_before
-        else:
-            self.year_before = ''
-
-        if year_after:
-            self.year_after = year_after
-        else:
-            self.year_after = ''
+        self.year_before = year_before if year_before else ''
+        self.year_after = year_after if year_after else ''
 
     def start_requests(self):
         """Sets up the base urls and start the initial requests."""
@@ -40,7 +35,7 @@ class GovSpider(BaseSpider):
                 'official_document_status': 'all',
                 'world_locations[]': 'all',
                 'from_date': '01/01/{}'.format(self.year_after),
-                'to_date': '31/12/{}'.format(self.year_before)
+                'to_date': '31/12/{}'.format(int(self.year_before) - 1)
             }
             query_params = urlencode(query_dict)
             url = url + '?' + query_params
