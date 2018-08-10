@@ -3,7 +3,7 @@ import os
 import logging
 from datetime import datetime
 from scrapy import spiderloader
-from tools import DatabaseConnector, DynamoDBConnector
+from tools import DatabaseConnector
 from tools.utils import parse_keywords_files, get_file_hash
 from scrapy.utils.project import get_project_settings
 from scrapy.exceptions import DropItem
@@ -35,10 +35,7 @@ class WsfScrapingPipeline(object):
             folder_path = os.path.join('results', 'pdfs', spider_name)
             os.makedirs(folder_path, exist_ok=True)
 
-        if self.settings['DATABASE_ADAPTOR'] == 'dynamodb':
-            self.database = DynamoDBConnector()
-        else:
-            self.database = DatabaseConnector()
+        self.database = DatabaseConnector()
         self.logger.info(
             'Using %s database backend. [%s]',
             self.settings.get('DATABASE_ADAPTOR'),
@@ -74,7 +71,7 @@ class WsfScrapingPipeline(object):
                 item['pdf']
             )
 
-            pdf_file, pdf_text = parse_pdf_document(f)
+            (pdf_file, pdf_text) = parse_pdf_document(f)
 
             if not pdf_file:
                 return item
@@ -129,8 +126,8 @@ class WsfScrapingPipeline(object):
                 'Empty filename, could not parse the pdf.'
             )
         file_hash = get_file_hash(item['pdf'])
-        id_publication, scrape_again = self.database.is_scraped(file_hash)
-        if id_publication and not scrape_again:
+        item_status = self.database.is_scraped(file_hash)
+        if item_status['status'] and not item_status['re-scrape']:
             # File is already scraped in the database
             raise DropItem(
                 'Item footprint is already in the database'
@@ -142,8 +139,8 @@ class WsfScrapingPipeline(object):
         full_item['hash'] = file_hash
         full_item['provider'] = spider.name
         full_item['date_scraped'] = datetime.now().strftime('%Y%m%d')
-        if scrape_again:
-            full_item['id'] = id_publication
+        if item_status['re-scrape']:
+            full_item['id'] = item_status['id']
             self.database.update_full_article(full_item)
         else:
             id_provider = self.database.get_or_create_name(

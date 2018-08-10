@@ -18,11 +18,20 @@ class DatabaseConnector:
         self.logger = logging.getLogger(__name__)
         if not database_url:
             database_url = os.getenv('DATABASE_URL')
-        self.connection = psycopg2.connect(database_url)
+            database_user = os.getenv('DATABASE_USER')
+            database_password = os.getenv('DATABASE_PASSWORD')
+            self.connection = psycopg2.connect(
+                host=database_url,
+                user=database_user,
+                password=database_password,
+                dbname='scraper'
+            )
+        else:
+            self.connection = psycopg2.connect(database_url)
         self.cursor = self.connection.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
         )
-        self._check_db()
+        # self._check_db()
 
     def __del__(self):
         """Commit all changes and close the database connection on the deletion
@@ -115,9 +124,21 @@ class DatabaseConnector:
         )
         result = self.cursor.fetchone()
         if result:
-            return result.id, result.scrape_again
+            self.logger.info('Got a result')
+            self.logger.info(result.scrape_again)
+            self.logger.info(type(result.scrape_again))
+            self.logger.info(dir(result.scrape_again))
+            return {
+                 'id': result.id,
+                 're-scrape': result.scrape_again,
+                 'status': True
+            }
         else:
-            return (None, None)
+            self.logger.info('Did not get a result')
+            return {
+                'status': False,
+                're-scrape': False
+            }
 
     def get_articles(self, offset=0, limit=-1):
         """Return a list of articles. By default, returns every articles. This
@@ -149,7 +170,7 @@ class DatabaseConnector:
             RETURNING id;
             """,
             (article['title'], article['uri'], article['pdf'],
-             article['hash'], article.get('authors', ''), article['year'],
+             article['hash'], article.get('authors', ''), article.get('year'),
              article['text'], id_provider, datetime.now(),)
         )
         return self.cursor.fetchone().id
@@ -169,7 +190,7 @@ class DatabaseConnector:
             WHERE id=%s;
             """,
             (article['title'], article['uri'], article['pdf'],
-             article['hash'], article.get('authors', ''), article['year'],
+             article['hash'], article.get('authors', ''), article.get('year'),
              article['text'], article['id'],)
         )
 
