@@ -13,6 +13,7 @@ requests = "==2.19.1"
 
 [dev-packages]
 pytest = "*"
+moto = "*"
 
 [requires]
 python_version = "3.6"
