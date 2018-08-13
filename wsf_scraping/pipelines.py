@@ -35,7 +35,12 @@ class WsfScrapingPipeline(object):
             folder_path = os.path.join('results', 'pdfs', spider_name)
             os.makedirs(folder_path, exist_ok=True)
 
-        self.database = DatabaseConnector()
+        self.database = DatabaseConnector(
+            self.settings['RDS_HOST'],
+            self.settings['RDS_USERNAME'],
+            self.settings['RDS_PASSWORD'],
+            self.settings['RDS_DATABASE']
+        )
         self.logger.info(
             'Using %s database backend. [%s]',
             self.settings.get('DATABASE_ADAPTOR'),
@@ -71,7 +76,7 @@ class WsfScrapingPipeline(object):
                 item['pdf']
             )
 
-            (pdf_file, pdf_text) = parse_pdf_document(f)
+            pdf_file, pdf_text = parse_pdf_document(f)
 
             if not pdf_file:
                 return item

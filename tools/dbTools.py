@@ -1,12 +1,11 @@
 import psycopg2
 import psycopg2.extras
 import logging
-import os
 from datetime import datetime
 
 
 class DatabaseConnector:
-    def __init__(self, database_url=None):
+    def __init__(self, host, user, password, dbname, port=5432):
         """Initialise an instance of the DatabaseConnector class and create:
          - self.logger: a logger to log errors
          - self.connection: the connection to the sqlite3 database
@@ -16,40 +15,24 @@ class DatabaseConnector:
         """
 
         self.logger = logging.getLogger(__name__)
-        if not database_url:
-            database_url = os.getenv('DATABASE_URL')
-            database_user = os.getenv('DATABASE_USER')
-            database_password = os.getenv('DATABASE_PASSWORD')
-            self.connection = psycopg2.connect(
-                host=database_url,
-                user=database_user,
-                password=database_password,
-                dbname='scraper'
-            )
-        else:
-            self.connection = psycopg2.connect(database_url)
+        self.connection = psycopg2.connect(
+            host=host,
+            user=user,
+            password=password,
+            port=port,
+            dbname=dbname
+        )
         self.cursor = self.connection.cursor(
             cursor_factory=psycopg2.extras.NamedTupleCursor
         )
-        # self._check_db()
 
     def __del__(self):
         """Commit all changes and close the database connection on the deletion
         of this instance from memory.
         """
-        self._close_all_spiders()
         self.connection.commit()
         self.cursor.close()
         self.connection.close()
-
-    def _close_all_spiders(self):
-        self._execute(
-            """
-            UPDATE spiders
-            SET status = %s, end_time = CURRENT_TIMESTAMP;
-            """,
-            ('finished',)
-        )
 
     def _execute(self, query, params=()):
         """Try to execute the SQL query passed by the query parameter, with the
@@ -64,35 +47,6 @@ class DatabaseConnector:
                 query,
             )
             raise
-
-    def _check_db(self):
-        """Create the tables needed by the web scraper if they don't exists."""
-        self._execute(
-            """
-            CREATE TABLE IF NOT EXISTS article
-            (
-                id SERIAL PRIMARY KEY,
-                url VARCHAR(255),
-                file_hash VARCHAR(32),
-                scrap_again BOOLEAN DEFAULT FALSE,
-                timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-        )
-        self._execute(
-            """
-            CREATE TABLE IF NOT EXISTS spiders
-            (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(64),
-                uuid VARCHAR(64),
-                status VARCHAR(255),
-                end_time TIMESTAMP,
-                start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-            """
-        )
-        self.connection.commit()
 
     def reset_scraped(self):
         """Set all the articles `scrap_again` attribute to 1, forcing the web
@@ -124,17 +78,12 @@ class DatabaseConnector:
         )
         result = self.cursor.fetchone()
         if result:
-            self.logger.info('Got a result')
-            self.logger.info(result.scrape_again)
-            self.logger.info(type(result.scrape_again))
-            self.logger.info(dir(result.scrape_again))
             return {
                  'id': result.id,
                  're-scrape': result.scrape_again,
                  'status': True
             }
         else:
-            self.logger.info('Did not get a result')
             return {
                 'status': False,
                 're-scrape': False
