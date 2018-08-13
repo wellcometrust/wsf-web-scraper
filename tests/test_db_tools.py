@@ -1,5 +1,4 @@
 import unittest
-import os
 from tools import DatabaseConnector
 
 
@@ -7,11 +6,9 @@ class TestDBTools(unittest.TestCase):
 
     def setUp(self):
         """Assuming the database is already set up."""
-        url = os.getenv('DATABASE_URL_TEST')
-        self.assertTrue(url)
-        if not url:
-            return
-        self.database = DatabaseConnector(url)
+        self.database = DatabaseConnector(
+            'localhost', 'test_user', '', 'scraper_test'
+        )
         mock_article = {
             'title': 'foo',
             'uri': 'http://foo.bar',
