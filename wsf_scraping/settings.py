@@ -94,6 +94,7 @@ if FEED_CONFIG == 'AWS':
 else:
     # By default, log the results in a local folder
     FEED_URI = './results/%(name)s.json'
+    RDS_DATABASE = 'scraper'
 
 # Lists to look for (case insensitive)
 SECTIONS_KEYWORDS_FILE = './resources/section_keywords.txt'

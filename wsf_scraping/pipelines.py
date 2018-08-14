@@ -121,6 +121,11 @@ class WsfScrapingPipeline(object):
                 self.logger.warning(
                     "The file couldn't be found, and wasn't deleted."
                 )
+
+        # Remove the path from the value we are storing
+        item['pdf'] = os.path.basename(item['pdf'])
+        item['provider'] = spider_name
+        item['date_scraped'] = datetime.now().strftime('%Y%m%d')
         return item
 
     def process_item(self, item, spider):
@@ -130,28 +135,15 @@ class WsfScrapingPipeline(object):
             raise DropItem(
                 'Empty filename, could not parse the pdf.'
             )
-        file_hash = get_file_hash(item['pdf'])
-        item_status = self.database.is_scraped(file_hash)
-        if item_status['status'] and not item_status['re-scrape']:
-            # File is already scraped in the database
-            raise DropItem(
-                'Item footprint is already in the database'
-            )
-        full_item = self.check_keywords(item, spider.name, item['pdf'])
+        item['hash'] = get_file_hash(item['pdf'])
+        db_item = self.database.get_scraping_info(item['hash'])
 
-        # Remove the path from the value we are storing
-        full_item['pdf'] = os.path.basename(item['pdf'])
-        full_item['hash'] = file_hash
-        full_item['provider'] = spider.name
-        full_item['date_scraped'] = datetime.now().strftime('%Y%m%d')
-        if item_status['re-scrape']:
-            full_item['id'] = item_status['id']
-            self.database.update_full_article(full_item)
-        else:
+        if not db_item:
+            full_item = self.check_keywords(item, spider.name, item['pdf'])
             id_provider = self.database.get_or_create_name(
                 spider.name, 'provider'
             )
-            id_publication = self.database.insert_full_article(
+            id_publication = self.database.insert_full_publication(
                 full_item,
                 id_provider
             )
@@ -176,6 +168,15 @@ class WsfScrapingPipeline(object):
                 id_publication
             )
 
-        self.database.insert_article(file_hash, item['uri'])
+            self.database.insert_publication(item['hash'], item['uri'])
+        elif db_item.scrape_again:
+            full_item = self.check_keywords(item, spider.name, item['pdf'])
+            full_item['id'] = db_item.id
+            self.database.update_full_publication(full_item)
+        else:
+            # File is already scraped in the database
+            raise DropItem(
+                'Item footprint is already in the database'
+            )
 
         return full_item
