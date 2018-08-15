@@ -29,7 +29,7 @@ National Stem Learning Centre
 
 Deltas
 H3 Africa
-10000 Genome
+1000 Genomes
 Genomics England
 HRCS
 
