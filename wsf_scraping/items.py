@@ -5,9 +5,9 @@ import scrapy
 class BaseArticle(scrapy.Item):
     def __repr__(self):
         return repr({
-            'title': self['title'],
-            'uri': self['uri'],
-            'provider': self['provider'],
+            'title': self.get('title'),
+            'uri': self.get('uri'),
+            'provider': self.get('provider'),
         })
 
     title = scrapy.Field()
