@@ -163,8 +163,8 @@ class WsfScrapingPipeline(object):
                 id_publication
             )
             self.database.insert_joints(
-                'subjects',
-                full_item.get('types'),
+                'subject',
+                full_item.get('subjects'),
                 id_publication
             )
 
